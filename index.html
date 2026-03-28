@@ -20,10 +20,7 @@
 html,body{width:1920px;height:1080px;background:var(--bg);color:var(--text);font-family:var(--font-body);overflow:hidden;}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0;}
 body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 600px 400px at 0% 0%,rgba(0,180,255,0.06) 0%,transparent 70%),radial-gradient(ellipse 600px 400px at 100% 100%,rgba(0,255,204,0.04) 0%,transparent 70%);pointer-events:none;z-index:0;}
-
 .layout{position:relative;z-index:1;width:1920px;height:1080px;display:grid;grid-template-columns:540px 1fr 440px;grid-template-rows:80px 1fr 54px;padding:16px;gap:12px;}
-
-/* 헤더 */
 .header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:12px;}
 .header-brand{display:flex;align-items:center;gap:16px;}
 .live-badge{display:flex;align-items:center;gap:6px;background:var(--danger);padding:4px 14px;border-radius:3px;font-family:var(--font-mono);font-size:15px;letter-spacing:2px;color:#fff;box-shadow:0 0 16px rgba(255,45,45,0.5);}
@@ -40,14 +37,10 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .hstat-val.warn{color:var(--warn);}
 .hstat-val.danger{color:var(--danger);text-shadow:0 0 16px rgba(255,45,45,0.6);}
 .hstat-label{font-size:11px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
-
-/* 좌측 */
 .panel-left{display:flex;flex-direction:column;gap:10px;}
 .latest-eq{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 16px;position:relative;overflow:hidden;}
 .latest-eq::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--accent);box-shadow:var(--glow);}
 .eq-label{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:3px;margin-bottom:6px;}
-
-/* 메인 정보 행 */
 .eq-main-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;margin-bottom:8px;}
 .eq-main-loc{font-size:20px;font-weight:700;color:#fff;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .eq-main-mag{font-family:var(--font-display);font-size:54px;color:var(--accent);line-height:1;}
@@ -56,15 +49,11 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .eq-main-info{display:flex;flex-direction:column;gap:3px;padding-top:4px;}
 .eq-info-item{font-size:12px;color:var(--text2);}
 .eq-info-item span{color:var(--text);font-weight:500;}
-
-/* 진도 박스 - 일본식 표기 강조 */
 .shindo-box{display:flex;flex-direction:column;align-items:center;gap:4px;}
 .shindo-label-small{font-family:var(--font-mono);font-size:9px;color:var(--text2);letter-spacing:1px;text-align:center;line-height:1.2;}
 .shindo-label-small em{color:var(--accent);font-style:normal;}
 .shindo-large{display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;font-family:var(--font-display);font-size:32px;border-radius:4px;}
-.shindo-kr-note{font-size:10px;color:var(--text2);text-align:center;line-height:1.3;max-width:64px;}
-
-/* 진도 색상 */
+.shindo-kr-note{font-size:10px;color:var(--text2);text-align:center;line-height:1.3;max-width:64px;white-space:pre-line;}
 .sh-1,.sh-2{background:#0c447c;color:#85b7eb;}
 .sh-3{background:#27500a;color:#c0dd97;}
 .sh-4{background:#633806;color:#fac775;}
@@ -73,8 +62,6 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .sh-6l{background:#a32d2d;color:#f7c1c1;}
 .sh-6u{background:#791f1f;color:#f09595;}
 .sh-7{background:#ff2d2d;color:#fff;box-shadow:0 0 20px rgba(255,45,45,0.8);}
-
-/* 날씨 패널 */
 .weather-panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px 14px;display:flex;align-items:center;gap:16px;}
 .weather-loc{font-size:11px;color:var(--accent);font-family:var(--font-mono);letter-spacing:2px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
 .weather-main{display:flex;align-items:center;gap:10px;}
@@ -85,9 +72,6 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .weather-detail{font-size:11px;color:var(--text2);font-family:var(--font-mono);}
 .weather-detail span{color:var(--text);}
 .weather-desc{font-size:12px;color:var(--accent2);}
-.weather-loading{font-size:11px;color:var(--text2);font-family:var(--font-mono);}
-
-/* 지진 목록 */
 .eq-list-panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:12px 16px;flex:1;overflow:hidden;}
 .panel-title{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:3px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
 .eq-list-items{display:flex;flex-direction:column;}
@@ -99,16 +83,12 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .eq-row-loc{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .eq-row-time{font-family:var(--font-mono);font-size:11px;color:var(--text2);text-align:right;}
 .eq-row-depth{font-family:var(--font-mono);font-size:11px;color:var(--text2);text-align:right;}
-
-/* 지도 */
 .panel-map{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:12px;display:flex;flex-direction:column;overflow:hidden;}
 .map-label{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:3px;margin-bottom:6px;}
 #japan-map{flex:1;display:block;width:100%;}
 .map-legend{display:flex;gap:16px;margin-top:6px;justify-content:center;}
 .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);font-family:var(--font-mono);}
 .legend-dot{width:10px;height:10px;border-radius:50%;}
-
-/* 우측 */
 .panel-right{display:flex;flex-direction:column;gap:10px;}
 .region-panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:12px 14px;flex:1;overflow:hidden;}
 .region-rows{display:flex;flex-direction:column;}
@@ -117,21 +97,22 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .region-name{font-size:13px;color:var(--text);}
 .shindo-badge{font-family:var(--font-display);font-size:17px;width:34px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:3px;}
 
-/* 진도 비교 설명 패널 */
+/* ── 진도 가이드: 가로 바 형태 ── */
 .shindo-guide{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px 14px;}
 .guide-title{font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:2px;margin-bottom:8px;}
-.guide-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}
-.guide-item{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.guide-badge{width:28px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:2px;font-family:var(--font-display);font-size:14px;}
-.guide-kr{font-size:9px;color:var(--text2);text-align:center;line-height:1.2;}
-.guide-sep{width:1px;background:var(--border);margin:0 2px;}
+.guide-rows{display:flex;flex-direction:column;gap:4px;}
+.guide-row{display:grid;grid-template-columns:32px 1fr;align-items:center;gap:6px;}
+.guide-num{font-family:var(--font-display);font-size:14px;text-align:center;height:22px;display:flex;align-items:center;justify-content:center;border-radius:2px;flex-shrink:0;}
+.guide-track{position:relative;height:22px;background:rgba(255,255,255,0.04);border-radius:2px;overflow:hidden;}
+.guide-fill{position:absolute;left:0;top:0;height:100%;border-radius:2px;transition:width .6s ease;}
+.guide-content{position:absolute;inset:0;display:flex;align-items:center;padding:0 7px;gap:5px;}
+.guide-icon{font-size:13px;line-height:1;flex-shrink:0;}
+.guide-text{font-size:11px;color:#fff;font-weight:500;white-space:nowrap;flex:1;overflow:hidden;text-overflow:ellipsis;}
+.guide-mm{font-family:var(--font-mono);font-size:9px;color:rgba(255,255,255,0.5);flex-shrink:0;}
 
-/* 세이스모 */
 .seismo-panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:12px 14px;height:100px;}
 .seismo-wrap{display:flex;align-items:flex-end;gap:3px;height:58px;margin-top:6px;}
 .seismo-bar{flex:1;background:var(--accent);border-radius:1px 1px 0 0;opacity:.7;transition:height .3s ease;}
-
-/* 티커 */
 .ticker{grid-column:1/-1;background:var(--bg3);border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;overflow:hidden;height:44px;}
 .ticker-badge{background:var(--accent);color:#000;font-family:var(--font-mono);font-size:12px;font-weight:bold;letter-spacing:2px;padding:0 14px;height:100%;display:flex;align-items:center;white-space:nowrap;flex-shrink:0;}
 .ticker-track{flex:1;overflow:hidden;height:100%;}
@@ -139,8 +120,6 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 @keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 .ticker-item{font-family:var(--font-mono);font-size:13px;color:var(--text);padding:0 32px;border-right:1px solid var(--border);}
 .ticker-item span{color:var(--accent2);}
-
-/* 플래시 */
 .flash-overlay{position:fixed;inset:0;background:rgba(255,45,45,0.18);pointer-events:none;z-index:999;opacity:0;}
 .flash-overlay.active{animation:flash-anim 1.8s ease-out forwards;}
 @keyframes flash-anim{0%,15%{opacity:1}100%{opacity:0}}
@@ -171,7 +150,6 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
     </div>
   </header>
 
-  <!-- 좌측 -->
   <div class="panel-left">
     <div class="latest-eq">
       <div class="eq-label">▶ 최근 발생 지진</div>
@@ -183,16 +161,15 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
           <div class="eq-info-item">진원 깊이 <span id="eq-depth">—</span></div>
           <div class="eq-info-item">좌표 <span id="eq-coord">—</span></div>
         </div>
-        <!-- 진도 박스: 일본식 표기 명확화 -->
         <div class="shindo-box">
           <div class="shindo-label-small">일본식<br><em>최대진도</em></div>
           <div class="shindo-large sh-1" id="eq-shindo">—</div>
-          <div class="shindo-kr-note" id="eq-shindo-note">한국 기준<br>약 MM —</div>
+          <div class="shindo-kr-note" id="eq-shindo-note">한국 기준
+약 MM —</div>
         </div>
       </div>
     </div>
 
-    <!-- 날씨 패널 -->
     <div class="weather-panel">
       <div style="flex:1;min-width:0;">
         <div class="weather-loc" id="wx-loc">진원지 날씨 로드 중...</div>
@@ -223,7 +200,6 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
     </div>
   </div>
 
-  <!-- 지도 -->
   <div class="panel-map">
     <div class="map-label">◈ 진원지 분포 MAP</div>
     <svg id="japan-map"></svg>
@@ -235,26 +211,125 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
     </div>
   </div>
 
-  <!-- 우측 -->
   <div class="panel-right">
     <div class="region-panel">
       <div class="panel-title">◈ 지역별 최대진도 (일본식)</div>
       <div class="region-rows" id="region-list"></div>
     </div>
 
-    <!-- 진도 비교 가이드 -->
+    <!-- 진도 가이드: 가로 바 + 아이콘 -->
     <div class="shindo-guide">
-      <div class="guide-title">◈ 일본 진도(震度) ↔ 한국 진도(MM) 비교</div>
-      <div class="guide-grid">
-        <div class="guide-item"><div class="guide-badge sh-1">1</div><div class="guide-kr">MM Ⅲ<br>실내감지</div></div>
-        <div class="guide-item"><div class="guide-badge sh-2">2</div><div class="guide-kr">MM Ⅳ<br>수면중각성</div></div>
-        <div class="guide-item"><div class="guide-badge sh-3">3</div><div class="guide-kr">MM Ⅴ<br>실외감지</div></div>
-        <div class="guide-item"><div class="guide-badge sh-4">4</div><div class="guide-kr">MM Ⅵ<br>물건이동</div></div>
-        <div class="guide-item"><div class="guide-badge sh-5l">5약</div><div class="guide-kr">MM Ⅶ<br>균열발생</div></div>
-        <div class="guide-item"><div class="guide-badge sh-5u">5강</div><div class="guide-kr">MM Ⅶ+<br>가구전도</div></div>
-        <div class="guide-item"><div class="guide-badge sh-6l">6약</div><div class="guide-kr">MM Ⅷ<br>벽파손</div></div>
-        <div class="guide-item"><div class="guide-badge sh-6u">6강</div><div class="guide-kr">MM Ⅸ<br>건물파괴</div></div>
-        <div class="guide-item" style="grid-column:span 2"><div class="guide-badge sh-7" style="width:100%;">7</div><div class="guide-kr">MM Ⅹ~Ⅻ<br>대파괴·단층</div></div>
+      <div class="guide-title">◈ 일본 진도(震度) — 체감 · 피해 단계</div>
+      <div class="guide-rows">
+
+        <div class="guide-row">
+          <div class="guide-num sh-1">1</div>
+          <div class="guide-track">
+            <div class="guide-fill" style="width:11%;background:#0c447c;"></div>
+            <div class="guide-content">
+              <span class="guide-icon">🪑</span>
+              <span class="guide-text">실내에서 조용히 있으면 느낌</span>
+              <span class="guide-mm">MM Ⅲ</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-row">
+          <div class="guide-num sh-2">2</div>
+          <div class="guide-track">
+            <div class="guide-fill" style="width:22%;background:#185fa5;"></div>
+            <div class="guide-content">
+              <span class="guide-icon">😴</span>
+              <span class="guide-text">수면 중 대부분 각성, 매달린 물체 흔들림</span>
+              <span class="guide-mm">MM Ⅳ</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-row">
+          <div class="guide-num sh-3">3</div>
+          <div class="guide-track">
+            <div class="guide-fill" style="width:33%;background:#3b6d11;"></div>
+            <div class="guide-content">
+              <span class="guide-icon">🚶</span>
+              <span class="guide-text">실외에서도 느낌, 선반 물건 흔들림</span>
+              <span class="guide-mm">MM Ⅴ</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-row">
+          <div class="guide-num sh-4">4</div>
+          <div class="guide-track">
+            <div class="guide-fill" style="width:44%;background:#854f0b;"></div>
+            <div class="guide-content">
+              <span class="guide-icon">🪟</span>
+              <span class="guide-text">전선 크게 흔들림, 선반 물건 떨어짐</span>
+              <span class="guide-mm">MM Ⅵ</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-row">
+          <div class="guide-num sh-5l">5약</div>
+          <div class="guide-track">
+            <div class="guide-fill" style="width:55%;background:#993c1d;"></div>
+            <div class="guide-content">
+              <span class="guide-icon">🏃</span>
+              <span class="guide-text">서 있기 불안정, 유리창 파손 시작</span>
+              <span class="guide-mm">MM Ⅶ</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-row">
+          <div class="guide-num sh-5u">5강</div>
+          <div class="guide-track">
+            <div class="guide-fill" style="width:64%;background:#a32d2d;"></div>
+            <div class="guide-content">
+              <span class="guide-icon">🪞</span>
+              <span class="guide-text">가구 전도, 내장 마감재·창문 파손</span>
+              <span class="guide-mm">MM Ⅶ~Ⅷ</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-row">
+          <div class="guide-num sh-6l">6약</div>
+          <div class="guide-track">
+            <div class="guide-fill" style="width:75%;background:#791f1f;"></div>
+            <div class="guide-content">
+              <span class="guide-icon">🧱</span>
+              <span class="guide-text">벽 균열·일부 붕괴, 서 있기 불가</span>
+              <span class="guide-mm">MM Ⅷ</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-row">
+          <div class="guide-num sh-6u">6강</div>
+          <div class="guide-track">
+            <div class="guide-fill" style="width:86%;background:#501313;"></div>
+            <div class="guide-content">
+              <span class="guide-icon">🏚️</span>
+              <span class="guide-text">목조 건물 대부분 기울거나 도괴</span>
+              <span class="guide-mm">MM Ⅸ</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-row">
+          <div class="guide-num sh-7">7</div>
+          <div class="guide-track" style="box-shadow:0 0 6px rgba(255,45,45,0.35);">
+            <div class="guide-fill" style="width:100%;background:linear-gradient(90deg,#a32d2d,#ff2d2d);"></div>
+            <div class="guide-content">
+              <span class="guide-icon">💥</span>
+              <span class="guide-text">내진 건물도 파괴, 지표 단층 발생</span>
+              <span class="guide-mm">MM Ⅹ~Ⅻ</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -277,9 +352,6 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script>
-// ══════════════════════════════════════════════
-//  지역명 한글 매핑 (확장판)
-// ══════════════════════════════════════════════
 const LOC_MAP = {
   '青森県':'아오모리현','青森':'아오모리','岩手県':'이와테현','岩手':'이와테',
   '宮城県':'미야기현','宮城':'미야기','秋田県':'아키타현','秋田':'아키타',
@@ -289,7 +361,7 @@ const LOC_MAP = {
   '千葉県':'치바현','千葉':'치바','東京都':'도쿄도','東京':'도쿄',
   '神奈川県':'가나가와현','神奈川':'가나가와','北海道':'홋카이도',
   '石狩':'이시카리','後志':'시리베시','空知':'소라치','上川':'가미카와',
-  '留萌':'루모이ㅣ','宗谷':'소야','網走':'아바시리','胆振':'이부리',
+  '留萌':'루모이','宗谷':'소야','網走':'아바시리','胆振':'이부리',
   '日高':'히다카','十勝':'도카치','釧路':'구시로','根室':'네무로',
   '新潟県':'니가타현','新潟':'니가타','富山県':'도야마현','富山':'도야마',
   '石川県':'이시카와현','石川':'이시카와','福井県':'후쿠이현','福井':'후쿠이',
@@ -331,8 +403,7 @@ const LOC_MAP = {
   '紀伊半島沖':'기이반도 앞바다','熊野灘':'구마노나다',
   '遠州灘':'엔슈나다','駿河湾':'스루가만',
   '相模湾':'사가미만','東京湾':'도쿄만',
-  '房総沖':'보소 앞바다','房総半島沖':'보소반도 앞바다',
-  '銚子沖':'조시 앞바다',
+  '房総沖':'보소 앞바다','房総半島沖':'보소반도 앞바다','銚子沖':'조시 앞바다',
   '千葉県東方沖':'치바 동방 앞바다','茨城県沖':'이바라키 앞바다',
   '福島県沖':'후쿠시마 앞바다','宮城県沖':'미야기 앞바다',
   '岩手県沖':'이와테 앞바다','青森県東方沖':'아오모리 동방 앞바다',
@@ -341,55 +412,42 @@ const LOC_MAP = {
   '択捉島沖':'에토로후지마 앞바다','国後島沖':'구나시리지마 앞바다',
   '釧路沖':'구시로 앞바다','十勝沖':'도카치 앞바다',
   '新潟県中越':'니가타현 주에쓰','長野県北部':'나가노현 북부',
-  '岐阜県飛騨':'기후현 히다',
-  '静岡県東部':'시즈오카현 동부','静岡県中部':'시즈오카현 중부','静岡県西部':'시즈오카현 서부',
-  '能登地方':'노토 지방',
+  '岐阜県飛騨':'기후현 히다','能登地方':'노토 지방',
   '横浜':'요코하마','川崎':'가와사키','さいたま':'사이타마시',
   '仙台':'센다이','盛岡':'모리오카','水戸':'미토','宇都宮':'우쓰노미야',
   '甲府':'고후','金沢':'가나자와','名古屋':'나고야',
   '神戸':'고베','姫路':'히메지','高松':'다카마쓰','松山':'마쓰야마',
   '北九州':'기타큐슈','那覇':'나하',
 };
-
-const LOC_KEYS = Object.keys(LOC_MAP).sort((a,b)=>b.length-a.length);
-
-function locKr(name) {
-  if (!name) return '불명';
-  if (LOC_MAP[name]) return LOC_MAP[name];
-  for (const key of LOC_KEYS) {
-    if (name.includes(key)) {
-      let r = LOC_MAP[key];
-      if (name.includes('沖') && !r.includes('앞바다') && !r.includes('근해')) r += ' 앞바다';
-      else if (name.includes('近海') && !r.includes('근해')) r += ' 근해';
+const LOC_KEYS=Object.keys(LOC_MAP).sort((a,b)=>b.length-a.length);
+function locKr(name){
+  if(!name)return'불명';
+  if(LOC_MAP[name])return LOC_MAP[name];
+  for(const key of LOC_KEYS){
+    if(name.includes(key)){
+      let r=LOC_MAP[key];
+      if(name.includes('沖')&&!r.includes('앞바다')&&!r.includes('근해'))r+=' 앞바다';
+      else if(name.includes('近海')&&!r.includes('근해'))r+=' 근해';
       return r;
     }
   }
   return name;
 }
-
-const SCALE_MAP = {'10':'1','20':'2','30':'3','40':'4','45':'5약','50':'5강','55':'6약','60':'6강','70':'7'};
-const SCALE_CLS = {'1':'sh-1','2':'sh-2','3':'sh-3','4':'sh-4','5약':'sh-5l','5강':'sh-5u','6약':'sh-6l','6강':'sh-6u','7':'sh-7'};
-
-// 일본 진도 → 한국 MM 대응
-const SHINDO_TO_MM = {
-  '1':'MM Ⅲ','2':'MM Ⅳ','3':'MM Ⅴ','4':'MM Ⅵ',
-  '5약':'MM Ⅶ','5강':'MM Ⅶ~Ⅷ','6약':'MM Ⅷ','6강':'MM Ⅸ','7':'MM Ⅹ~Ⅻ'
-};
-
-// WMO 날씨 코드 → 아이콘+설명
-function wxCode(code) {
-  if (code===0) return {icon:'☀️',desc:'맑음'};
-  if (code<=2)  return {icon:'⛅',desc:'구름 조금'};
-  if (code===3) return {icon:'☁️',desc:'흐림'};
-  if (code<=49) return {icon:'🌫️',desc:'안개'};
-  if (code<=59) return {icon:'🌦️',desc:'이슬비'};
-  if (code<=69) return {icon:'🌧️',desc:'비'};
-  if (code<=79) return {icon:'🌨️',desc:'눈'};
-  if (code<=84) return {icon:'🌧️',desc:'소나기'};
-  if (code<=99) return {icon:'⛈️',desc:'뇌우'};
-  return {icon:'🌡️',desc:'—'};
+const SCALE_MAP={'10':'1','20':'2','30':'3','40':'4','45':'5약','50':'5강','55':'6약','60':'6강','70':'7'};
+const SCALE_CLS={'1':'sh-1','2':'sh-2','3':'sh-3','4':'sh-4','5약':'sh-5l','5강':'sh-5u','6약':'sh-6l','6강':'sh-6u','7':'sh-7'};
+const SHINDO_TO_MM={'1':'MM Ⅲ','2':'MM Ⅳ','3':'MM Ⅴ','4':'MM Ⅵ','5약':'MM Ⅶ','5강':'MM Ⅶ~Ⅷ','6약':'MM Ⅷ','6강':'MM Ⅸ','7':'MM Ⅹ~Ⅻ'};
+function wxCode(c){
+  if(c===0)return{icon:'☀️',desc:'맑음'};
+  if(c<=2)return{icon:'⛅',desc:'구름 조금'};
+  if(c===3)return{icon:'☁️',desc:'흐림'};
+  if(c<=49)return{icon:'🌫️',desc:'안개'};
+  if(c<=59)return{icon:'🌦️',desc:'이슬비'};
+  if(c<=69)return{icon:'🌧️',desc:'비'};
+  if(c<=79)return{icon:'🌨️',desc:'눈'};
+  if(c<=84)return{icon:'🌧️',desc:'소나기'};
+  if(c<=99)return{icon:'⛈️',desc:'뇌우'};
+  return{icon:'🌡️',desc:'—'};
 }
-
 function magColor(m){if(m>=5)return'#ff2d2d';if(m>=4)return'#ff8c00';if(m>=3)return'#fac775';return'#378add';}
 function magClass(m){if(m>=5)return'danger';if(m>=4)return'warn';return'';}
 function toJST(str){
@@ -397,8 +455,6 @@ function toJST(str){
   try{return new Date(str).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});}
   catch(e){return str.slice(0,19);}
 }
-
-// 시계
 function updateClock(){
   const jst=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Tokyo'}));
   const pad=n=>String(n).padStart(2,'0');
@@ -406,36 +462,26 @@ function updateClock(){
   const days=['일','월','화','수','목','금','토'];
   document.getElementById('clock-date').textContent=`${jst.getFullYear()}.${pad(jst.getMonth()+1)}.${pad(jst.getDate())} (${days[jst.getDay()]}) JST`;
 }
-setInterval(updateClock,1000);
-updateClock();
-
-// 날씨 가져오기 (Open-Meteo - 무료, CORS OK)
-let lastWxCoord = null;
-async function loadWeather(lat, lon, locName) {
-  const coordKey = `${lat?.toFixed(1)}_${lon?.toFixed(1)}`;
-  if (!lat || !lon) return;
-  if (lastWxCoord === coordKey) return; // 같은 좌표면 스킵
-  lastWxCoord = coordKey;
-  try {
-    document.getElementById('wx-loc').textContent = locName + ' 날씨 로드 중...';
-    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,windspeed_10m,apparent_temperature&timezone=Asia%2FTokyo`);
-    const d = await r.json();
-    const c = d.current;
-    const wx = wxCode(c.weathercode);
-    document.getElementById('wx-loc').textContent = '📍 ' + locName + ' 진원지 인근';
-    document.getElementById('wx-icon').textContent = wx.icon;
-    document.getElementById('wx-temp').textContent = Math.round(c.temperature_2m);
-    document.getElementById('wx-desc').textContent = wx.desc;
-    document.getElementById('wx-feel').textContent = Math.round(c.apparent_temperature);
-    document.getElementById('wx-wind').textContent = Math.round(c.windspeed_10m);
-    document.getElementById('wx-updated').textContent = '날씨 ' + new Date().toLocaleTimeString('ko-KR') + ' 갱신';
-  } catch(e) {
-    document.getElementById('wx-loc').textContent = '날씨 데이터 없음';
-  }
+setInterval(updateClock,1000);updateClock();
+let lastWxCoord=null;
+async function loadWeather(lat,lon,locName){
+  const key=`${lat?.toFixed(1)}_${lon?.toFixed(1)}`;
+  if(!lat||!lon||lastWxCoord===key)return;
+  lastWxCoord=key;
+  try{
+    document.getElementById('wx-loc').textContent=locName+' 날씨 로드 중...';
+    const d=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,windspeed_10m,apparent_temperature&timezone=Asia%2FTokyo`).then(r=>r.json());
+    const c=d.current,wx=wxCode(c.weathercode);
+    document.getElementById('wx-loc').textContent='📍 '+locName+' 진원지 인근';
+    document.getElementById('wx-icon').textContent=wx.icon;
+    document.getElementById('wx-temp').textContent=Math.round(c.temperature_2m);
+    document.getElementById('wx-desc').textContent=wx.desc;
+    document.getElementById('wx-feel').textContent=Math.round(c.apparent_temperature);
+    document.getElementById('wx-wind').textContent=Math.round(c.windspeed_10m);
+    document.getElementById('wx-updated').textContent='날씨 '+new Date().toLocaleTimeString('ko-KR')+' 갱신';
+  }catch(e){document.getElementById('wx-loc').textContent='날씨 데이터 없음';}
 }
-
-// 지도
-let mapReady=false, mapSvg, mapProj;
+let mapReady=false,mapSvg,mapProj;
 async function initMap(){
   try{
     const topo=await d3.json('https://cdn.jsdelivr.net/npm/datamaps@0.5.10/src/js/data/jpn.topo.json');
@@ -443,14 +489,12 @@ async function initMap(){
     const W=el.clientWidth||600,H=el.clientHeight||520;
     mapSvg=d3.select('#japan-map').attr('viewBox',`0 0 ${W} ${H}`);
     mapProj=d3.geoMercator().center([137.5,37]).scale(W*1.9).translate([W*0.42,H*0.48]);
-    mapSvg.selectAll('path.land')
-      .data(topojson.feature(topo,topo.objects.jpn).features).join('path')
+    mapSvg.selectAll('path.land').data(topojson.feature(topo,topo.objects.jpn).features).join('path')
       .attr('class','land').attr('d',d3.geoPath(mapProj))
       .attr('fill','#0d1a24').attr('stroke','rgba(0,180,255,0.25)').attr('stroke-width','0.7');
     mapReady=true;
   }catch(e){console.error('지도 로드 실패',e);}
 }
-
 function drawEpicenters(quakes){
   if(!mapReady||!mapSvg||!mapProj)return;
   mapSvg.selectAll('.epi,.epi-ring').remove();
@@ -459,24 +503,12 @@ function drawEpicenters(quakes){
     if(!h?.latitude||!h?.longitude)return;
     const[x,y]=mapProj([h.longitude,h.latitude]);
     const m=h.magnitude||0,r=Math.max(4,m*2),col=magColor(m);
-    if(i===0){
-      for(let k=0;k<2;k++){
-        mapSvg.append('circle').attr('class','epi-ring')
-          .attr('cx',x).attr('cy',y).attr('r',r+4)
-          .attr('fill','none').attr('stroke',col).attr('stroke-width',1.5).attr('opacity',.8)
-          .style('animation',`epiRing ${1.5+k*.5}s ease-out ${k*.3}s infinite`);
-      }
-    }
-    mapSvg.append('circle').attr('class','epi')
-      .attr('cx',x).attr('cy',y).attr('r',i===0?r+1:Math.max(3,r-1))
-      .attr('fill',col).attr('opacity',i===0?1:.55)
-      .attr('stroke',i===0?'#fff':'none').attr('stroke-width',i===0?1:0);
+    if(i===0){for(let k=0;k<2;k++){mapSvg.append('circle').attr('class','epi-ring').attr('cx',x).attr('cy',y).attr('r',r+4).attr('fill','none').attr('stroke',col).attr('stroke-width',1.5).attr('opacity',.8).style('animation',`epiRing ${1.5+k*.5}s ease-out ${k*.3}s infinite`);}}
+    mapSvg.append('circle').attr('class','epi').attr('cx',x).attr('cy',y).attr('r',i===0?r+1:Math.max(3,r-1)).attr('fill',col).attr('opacity',i===0?1:.55).attr('stroke',i===0?'#fff':'none').attr('stroke-width',i===0?1:0);
   });
 }
-
 function drawSeismo(quakes){
-  const wrap=document.getElementById('seismo-bars');
-  wrap.innerHTML='';
+  const wrap=document.getElementById('seismo-bars');wrap.innerHTML='';
   const maxM=Math.max(...quakes.map(q=>q.earthquake?.hypocenter?.magnitude||0),1);
   quakes.slice(0,20).reverse().forEach((q,i)=>{
     const m=q.earthquake?.hypocenter?.magnitude||0;
@@ -486,101 +518,56 @@ function drawSeismo(quakes){
     wrap.appendChild(bar);
   });
 }
-
 function buildTicker(quakes){
   const items=quakes.slice(0,10).map(q=>{
-    const h=q.earthquake?.hypocenter;
-    if(!h)return null;
+    const h=q.earthquake?.hypocenter;if(!h)return null;
     const sc=q.earthquake?.maxScale?SCALE_MAP[String(q.earthquake.maxScale)]:'';
-    const scTxt=sc?` · 최대진도 ${sc}`:'';
-    return `<span class="ticker-item">${toJST(q.time)} · <span>${locKr(h.name||'불명')}</span> · M${(h.magnitude||0).toFixed(1)} · 심도 ${h.depth||'—'}km${scTxt}</span>`;
+    return `<span class="ticker-item">${toJST(q.time)} · <span>${locKr(h.name||'불명')}</span> · M${(h.magnitude||0).toFixed(1)} · 심도 ${h.depth||'—'}km${sc?' · 최대진도 '+sc:''}</span>`;
   }).filter(Boolean);
-  const html=items.join('')+items.join('');
-  document.getElementById('ticker-inner').innerHTML=html;
+  document.getElementById('ticker-inner').innerHTML=items.join('')+items.join('');
 }
-
 let prevLatestId=null;
-
 async function loadData(){
   try{
     const data=await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=20').then(r=>r.json());
     if(!data?.length)return;
-
-    if(prevLatestId&&prevLatestId!==data[0].id){
-      const fl=document.getElementById('flash');
-      fl.classList.remove('active');void fl.offsetWidth;fl.classList.add('active');
-    }
+    if(prevLatestId&&prevLatestId!==data[0].id){const fl=document.getElementById('flash');fl.classList.remove('active');void fl.offsetWidth;fl.classList.add('active');}
     prevLatestId=data[0].id;
-
     const eq=data[0].earthquake,h=eq?.hypocenter;
     const mag=h?.magnitude?h.magnitude.toFixed(1):'—';
     const rawScale=eq?.maxScale?(SCALE_MAP[String(eq.maxScale)]||'—'):'—';
-
-    // 헤더
-    const magEl=document.getElementById('h-mag');
-    magEl.textContent=mag;magEl.className='hstat-val '+magClass(parseFloat(mag));
+    const magEl=document.getElementById('h-mag');magEl.textContent=mag;magEl.className='hstat-val '+magClass(parseFloat(mag));
     document.getElementById('h-shindo').textContent=rawScale;
     const cnt=data.filter(d=>{try{return Date.now()-new Date(d.time)<86400000;}catch(e){return false;}}).length;
     document.getElementById('h-count').textContent=cnt;
     document.getElementById('h-depth').textContent=h?.depth||'—';
-
-    // 최신 카드
     document.getElementById('eq-loc').textContent=locKr(h?.name);
-    const eqMagEl=document.getElementById('eq-mag');
-    eqMagEl.textContent='M'+mag;eqMagEl.className='eq-main-mag '+magClass(parseFloat(mag));
+    const eqMagEl=document.getElementById('eq-mag');eqMagEl.textContent='M'+mag;eqMagEl.className='eq-main-mag '+magClass(parseFloat(mag));
     document.getElementById('eq-time').textContent=toJST(data[0].time);
     document.getElementById('eq-depth').textContent=h?.depth?h.depth+'km':'—';
     document.getElementById('eq-coord').textContent=h?.latitude?`${h.latitude.toFixed(1)}°N ${h.longitude.toFixed(1)}°E`:'—';
-    const shEl=document.getElementById('eq-shindo');
-    shEl.textContent=rawScale;shEl.className='shindo-large '+(SCALE_CLS[rawScale]||'sh-1');
-    // 한국 MM 대응 표시
-    const mmNote=SHINDO_TO_MM[rawScale]||'—';
-    document.getElementById('eq-shindo-note').textContent=`한국 기준\n${mmNote}`;
-
-    // 날씨 (최신 진원지)
-    if(h?.latitude&&h?.longitude){
-      loadWeather(h.latitude, h.longitude, locKr(h.name||'불명'));
-    }
-
-    // 목록
+    const shEl=document.getElementById('eq-shindo');shEl.textContent=rawScale;shEl.className='shindo-large '+(SCALE_CLS[rawScale]||'sh-1');
+    document.getElementById('eq-shindo-note').textContent=`한국 기준\n${SHINDO_TO_MM[rawScale]||'—'}`;
+    if(h?.latitude&&h?.longitude)loadWeather(h.latitude,h.longitude,locKr(h.name||'불명'));
     document.getElementById('eq-list').innerHTML=data.slice(0,9).map(d=>{
       const dh=d.earthquake?.hypocenter;
       const m=dh?.magnitude?dh.magnitude.toFixed(1):'—';
-      const sc=d.earthquake?.maxScale?SCALE_MAP[String(d.earthquake.maxScale)]:'';
-      return `<div class="eq-row fade-in">
-        <div class="eq-row-mag ${magClass(parseFloat(m))}">M${m}</div>
-        <div class="eq-row-loc">${locKr(dh?.name)}</div>
-        <div class="eq-row-time">${toJST(d.time)}</div>
-        <div class="eq-row-depth">${dh?.depth?dh.depth+'km':'—'}</div>
-      </div>`;
+      return `<div class="eq-row fade-in"><div class="eq-row-mag ${magClass(parseFloat(m))}">M${m}</div><div class="eq-row-loc">${locKr(dh?.name)}</div><div class="eq-row-time">${toJST(d.time)}</div><div class="eq-row-depth">${dh?.depth?dh.depth+'km':'—'}</div></div>`;
     }).join('');
     document.getElementById('list-updated').textContent='갱신: '+new Date().toLocaleTimeString('ko-KR');
-
-    // 지역별 진도
     const points=data[0].points||[];
     if(points.length){
       const sorted=[...points].sort((a,b)=>(b.scale||0)-(a.scale||0)).slice(0,13);
       document.getElementById('region-list').innerHTML=sorted.map(r=>{
         const sc=SCALE_MAP[String(r.scale)]||'—';
-        return `<div class="region-row">
-          <span class="region-name">${locKr(r.addr)}</span>
-          <span class="shindo-badge ${SCALE_CLS[sc]||'sh-1'}">${sc}</span>
-        </div>`;
+        return `<div class="region-row"><span class="region-name">${locKr(r.addr)}</span><span class="shindo-badge ${SCALE_CLS[sc]||'sh-1'}">${sc}</span></div>`;
       }).join('');
     }
-
     drawEpicenters(data.filter(d=>d.earthquake?.hypocenter?.latitude));
-    drawSeismo(data);
-    buildTicker(data);
+    drawSeismo(data);buildTicker(data);
   }catch(e){console.error('로드 오류',e);}
 }
-
-(async()=>{
-  await initMap();
-  await loadData();
-  setInterval(loadData,60000);
-})();
-
+(async()=>{await initMap();await loadData();setInterval(loadData,60000);})();
 const s=document.createElement('style');
 s.textContent='@keyframes epiRing{0%{r:8;opacity:.8;stroke-width:1.5}100%{r:28;opacity:0;stroke-width:0.5}}';
 document.head.appendChild(s);
