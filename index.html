@@ -2,58 +2,107 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>일본 지진 실시간 모니터</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#040608;--bg2:#080c10;--bg3:#0d1318;
-  --grid:rgba(0,180,255,0.04);--accent:#00b4ff;--accent2:#00ffcc;
-  --warn:#ff8c00;--danger:#ff2d2d;--text:#c8dce8;--text2:#6a8a9a;
-  --border:rgba(0,180,255,0.15);--glow:0 0 12px rgba(0,180,255,0.3);
-  --font-display:'Bebas Neue',sans-serif;
-  --font-body:'Noto Sans KR',sans-serif;
-  --font-mono:'Share Tech Mono',monospace;
+  --bg:#040608; --bg2:#0a0f14; --bg3:#0d1318;
+  --accent:#00b4ff; --accent2:#00ffcc;
+  --warn:#ff8c00; --danger:#ff2d2d;
+  --text:#e8f4ff; --text2:#7a9ab0;
+  --border:rgba(0,180,255,0.18);
+  --font-d:'Bebas Neue',sans-serif;
+  --font-b:'Noto Sans KR',sans-serif;
+  --font-m:'Share Tech Mono',monospace;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:1920px;height:1080px;background:var(--bg);color:var(--text);font-family:var(--font-body);overflow:hidden;}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0;}
-body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 600px 400px at 0% 0%,rgba(0,180,255,0.06) 0%,transparent 70%),radial-gradient(ellipse 600px 400px at 100% 100%,rgba(0,255,204,0.04) 0%,transparent 70%);pointer-events:none;z-index:0;}
-.layout{position:relative;z-index:1;width:1920px;height:1080px;display:grid;grid-template-columns:540px 1fr 440px;grid-template-rows:80px 1fr 54px;padding:16px;gap:12px;}
-.header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:12px;}
-.header-brand{display:flex;align-items:center;gap:16px;}
-.live-badge{display:flex;align-items:center;gap:6px;background:var(--danger);padding:4px 14px;border-radius:3px;font-family:var(--font-mono);font-size:15px;letter-spacing:2px;color:#fff;box-shadow:0 0 16px rgba(255,45,45,0.5);}
-.live-dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:liveblink 1s ease-in-out infinite;}
-@keyframes liveblink{0%,100%{opacity:1}50%{opacity:0}}
-.brand-title{font-family:var(--font-display);font-size:42px;letter-spacing:4px;color:#fff;text-shadow:0 0 30px rgba(0,180,255,0.4);line-height:1;}
-.brand-sub{font-size:13px;color:var(--accent);font-family:var(--font-mono);letter-spacing:3px;text-transform:uppercase;margin-top:2px;}
-.header-clock{text-align:right;}
-.clock-time{font-family:var(--font-mono);font-size:44px;color:#fff;line-height:1;letter-spacing:2px;}
-.clock-date{font-family:var(--font-mono);font-size:14px;color:var(--text2);letter-spacing:2px;text-align:right;margin-top:2px;}
-.header-stats{display:flex;gap:24px;align-items:center;}
-.hstat{text-align:center;border-left:1px solid var(--border);padding-left:24px;}
-.hstat-val{font-family:var(--font-display);font-size:36px;color:var(--accent);line-height:1;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:1920px;height:1080px;background:var(--bg);color:var(--text);font-family:var(--font-b);overflow:hidden;}
+
+/* 배경 그리드 */
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,180,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,180,255,0.03) 1px,transparent 1px);
+  background-size:80px 80px;pointer-events:none;z-index:0;}
+
+.layout{
+  position:relative;z-index:1;
+  width:1920px;height:1080px;
+  display:grid;
+  grid-template-columns:620px 1fr 500px;
+  grid-template-rows:50px 108px 1fr;
+  padding:20px;gap:14px;
+}
+
+/* ══ 헤더 ══ */
+.header{
+  grid-column:1/-1;grid-row:2;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:2px solid var(--border);padding-bottom:10px;
+}
+.live-badge{
+  display:flex;align-items:center;gap:8px;
+  background:var(--danger);padding:6px 18px;border-radius:4px;
+  font-family:var(--font-m);font-size:20px;letter-spacing:3px;color:#fff;
+  box-shadow:0 0 20px rgba(255,45,45,0.6);flex-shrink:0;
+}
+.live-dot{width:10px;height:10px;border-radius:50%;background:#fff;animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.brand-title{font-family:var(--font-d);font-size:48px;letter-spacing:5px;color:#fff;text-shadow:0 0 30px rgba(0,180,255,0.5);line-height:1;}
+.brand-sub{font-size:15px;color:var(--accent);font-family:var(--font-m);letter-spacing:3px;margin-top:3px;}
+.header-brand{display:flex;align-items:center;gap:20px;}
+
+.header-stats{display:flex;gap:0;align-items:stretch;}
+.hstat{
+  text-align:center;border-left:2px solid var(--border);
+  padding:0 28px;display:flex;flex-direction:column;justify-content:center;
+}
+.hstat-val{font-family:var(--font-d);font-size:46px;color:var(--accent);line-height:1;}
 .hstat-val.warn{color:var(--warn);}
-.hstat-val.danger{color:var(--danger);text-shadow:0 0 16px rgba(255,45,45,0.6);}
-.hstat-label{font-size:11px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
-.panel-left{display:flex;flex-direction:column;gap:10px;}
-.latest-eq{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 16px;position:relative;overflow:hidden;}
-.latest-eq::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--accent);box-shadow:var(--glow);}
-.eq-label{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:3px;margin-bottom:6px;}
-.eq-main-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;margin-bottom:8px;}
-.eq-main-loc{font-size:20px;font-weight:700;color:#fff;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.eq-main-mag{font-family:var(--font-display);font-size:54px;color:var(--accent);line-height:1;}
-.eq-main-mag.warn{color:var(--warn);text-shadow:0 0 20px rgba(255,140,0,0.5);}
-.eq-main-mag.danger{color:var(--danger);text-shadow:0 0 20px rgba(255,45,45,0.6);}
-.eq-main-info{display:flex;flex-direction:column;gap:3px;padding-top:4px;}
-.eq-info-item{font-size:12px;color:var(--text2);}
-.eq-info-item span{color:var(--text);font-weight:500;}
+.hstat-val.danger{color:var(--danger);text-shadow:0 0 20px rgba(255,45,45,0.7);}
+.hstat-label{font-size:14px;color:var(--text2);letter-spacing:2px;margin-top:3px;}
+
+.clock-wrap{text-align:right;padding-left:28px;border-left:2px solid var(--border);}
+.clock-time{font-family:var(--font-m);font-size:48px;color:#fff;line-height:1;letter-spacing:2px;}
+.clock-date{font-family:var(--font-m);font-size:16px;color:var(--text2);margin-top:3px;}
+
+/* ══ 공통 패널 ══ */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.panel-hd{
+  font-family:var(--font-m);font-size:18px;color:var(--accent);
+  letter-spacing:3px;padding:14px 18px 10px;
+  border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.panel-hd-sm{font-size:14px;color:var(--text2);font-family:var(--font-m);letter-spacing:1px;}
+
+/* ══ 좌측 패널 ══ */
+.panel-left{display:flex;flex-direction:column;gap:10px;min-height:0;}
+
+/* 최신 지진 카드 */
+.eq-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:14px 18px;position:relative;overflow:hidden;flex-shrink:0;
+}
+.eq-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent);box-shadow:0 0 16px rgba(0,180,255,0.5);}
+.eq-card-label{font-family:var(--font-m);font-size:15px;color:var(--accent);letter-spacing:3px;margin-bottom:6px;}
+.eq-loc{font-size:26px;font-weight:700;color:#fff;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.eq-body{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;}
+.eq-mag{font-family:var(--font-d);font-size:72px;color:var(--accent);line-height:1;}
+.eq-mag.warn{color:var(--warn);text-shadow:0 0 24px rgba(255,140,0,0.5);}
+.eq-mag.danger{color:var(--danger);text-shadow:0 0 24px rgba(255,45,45,0.6);}
+.eq-meta{display:flex;flex-direction:column;gap:4px;}
+.eq-meta-row{font-size:16px;color:var(--text2);}
+.eq-meta-row b{color:var(--text);font-weight:700;}
+
+/* 진도 박스 */
 .shindo-box{display:flex;flex-direction:column;align-items:center;gap:4px;}
-.shindo-label-small{font-family:var(--font-mono);font-size:9px;color:var(--text2);letter-spacing:1px;text-align:center;line-height:1.2;}
-.shindo-label-small em{color:var(--accent);font-style:normal;}
-.shindo-large{display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;font-family:var(--font-display);font-size:32px;border-radius:4px;}
-.shindo-kr-note{font-size:10px;color:var(--text2);text-align:center;line-height:1.3;max-width:64px;white-space:pre-line;}
+.shindo-lbl{font-family:var(--font-m);font-size:11px;color:var(--text2);letter-spacing:1px;text-align:center;line-height:1.4;}
+.shindo-lbl em{color:var(--accent);font-style:normal;}
+.shindo-num{
+  width:70px;height:70px;font-family:var(--font-d);font-size:38px;
+  display:flex;align-items:center;justify-content:center;border-radius:6px;
+}
+.shindo-kr{font-size:12px;color:var(--text2);text-align:center;line-height:1.4;}
 .sh-1,.sh-2{background:#0c447c;color:#85b7eb;}
 .sh-3{background:#27500a;color:#c0dd97;}
 .sh-4{background:#633806;color:#fac775;}
@@ -61,284 +110,159 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .sh-5u{background:#993c1d;color:#f5c4b3;}
 .sh-6l{background:#a32d2d;color:#f7c1c1;}
 .sh-6u{background:#791f1f;color:#f09595;}
-.sh-7{background:#ff2d2d;color:#fff;box-shadow:0 0 20px rgba(255,45,45,0.8);}
-.weather-panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px 14px;display:flex;align-items:center;gap:16px;}
-.weather-loc{font-size:11px;color:var(--accent);font-family:var(--font-mono);letter-spacing:2px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
-.weather-main{display:flex;align-items:center;gap:10px;}
-.weather-icon{font-size:28px;line-height:1;}
-.weather-temp{font-family:var(--font-display);font-size:36px;color:#fff;line-height:1;}
-.weather-unit{font-size:14px;color:var(--text2);margin-left:2px;}
-.weather-details{display:flex;flex-direction:column;gap:2px;}
-.weather-detail{font-size:11px;color:var(--text2);font-family:var(--font-mono);}
-.weather-detail span{color:var(--text);}
-.weather-desc{font-size:12px;color:var(--accent2);}
-.eq-list-panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:12px 16px;flex:1;overflow:hidden;}
-.panel-title{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:3px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
-.eq-list-items{display:flex;flex-direction:column;}
-.eq-row{display:grid;grid-template-columns:46px 1fr 72px 58px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(0,180,255,0.06);gap:8px;}
+.sh-7{background:#ff2d2d;color:#fff;box-shadow:0 0 24px rgba(255,45,45,0.8);}
+
+/* 날씨 카드 */
+.wx-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:10px 16px;display:flex;align-items:center;gap:16px;flex-shrink:0;
+}
+.wx-label{font-family:var(--font-m);font-size:14px;color:var(--accent);letter-spacing:2px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wx-main{display:flex;align-items:center;gap:10px;}
+.wx-icon{font-size:34px;line-height:1;}
+.wx-temp{font-family:var(--font-d);font-size:46px;color:#fff;line-height:1;}
+.wx-unit{font-size:18px;color:var(--text2);}
+.wx-desc{font-size:15px;color:var(--accent2);margin-top:2px;}
+.wx-details{display:flex;flex-direction:column;gap:3px;margin-left:auto;}
+.wx-detail{font-size:15px;color:var(--text2);font-family:var(--font-m);}
+.wx-detail b{color:var(--text);}
+
+/* 지진 목록 */
+.eq-list-panel{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:0;flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;
+}
+.eq-list-body{flex:1;overflow:hidden;padding:4px 0;}
+.eq-row{
+  display:grid;grid-template-columns:60px 1fr 96px 64px;
+  align-items:center;padding:7px 16px;
+  border-bottom:1px solid rgba(0,180,255,0.05);gap:8px;
+}
 .eq-row:last-child{border-bottom:none;}
-.eq-row-mag{font-family:var(--font-display);font-size:22px;color:var(--accent);line-height:1;}
+.eq-row-mag{font-family:var(--font-d);font-size:26px;color:var(--accent);line-height:1;}
 .eq-row-mag.warn{color:var(--warn);}
 .eq-row-mag.danger{color:var(--danger);}
-.eq-row-loc{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.eq-row-time{font-family:var(--font-mono);font-size:11px;color:var(--text2);text-align:right;}
-.eq-row-depth{font-family:var(--font-mono);font-size:11px;color:var(--text2);text-align:right;}
-.panel-map{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:12px;display:flex;flex-direction:column;overflow:hidden;}
-.map-label{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:3px;margin-bottom:6px;}
-#japan-map{flex:1;display:block;width:100%;}
-.map-legend{display:flex;gap:16px;margin-top:6px;justify-content:center;}
-.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);font-family:var(--font-mono);}
-.legend-dot{width:10px;height:10px;border-radius:50%;}
-.panel-right{display:flex;flex-direction:column;gap:10px;}
-.region-panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:12px 14px;flex:1;overflow:hidden;}
-.region-rows{display:flex;flex-direction:column;}
-.region-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(0,180,255,0.06);}
+.eq-row-loc{font-size:17px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.eq-row-time{font-family:var(--font-m);font-size:14px;color:var(--text2);text-align:right;}
+.eq-row-depth{font-family:var(--font-m);font-size:14px;color:var(--text2);text-align:right;}
+
+/* ══ 지도 패널 ══ */
+.panel-map{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.map-body{flex:1;padding:8px;}
+#japan-map{width:100%;height:100%;display:block;}
+.map-legend{
+  display:flex;gap:20px;justify-content:center;
+  padding:10px;border-top:1px solid var(--border);
+}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:15px;color:var(--text2);font-family:var(--font-m);}
+.legend-dot{width:12px;height:12px;border-radius:50%;}
+
+/* ══ 우측 패널 ══ */
+.panel-right{display:flex;flex-direction:column;gap:14px;}
+
+/* 지역별 진도 */
+.region-panel{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  flex:1;overflow:hidden;display:flex;flex-direction:column;
+}
+.region-body{flex:1;overflow:hidden;padding:4px 0;}
+.region-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 18px;border-bottom:1px solid rgba(0,180,255,0.05);
+}
 .region-row:last-child{border-bottom:none;}
-.region-name{font-size:13px;color:var(--text);}
-.shindo-badge{font-family:var(--font-display);font-size:17px;width:34px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:3px;}
+.region-name{font-size:20px;color:var(--text);}
+.shindo-badge{
+  font-family:var(--font-d);font-size:22px;
+  width:44px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:4px;
+}
 
-/* ── 진도 가이드: 가로 바 형태 ── */
-.shindo-guide{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px 14px;}
-.guide-title{font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:2px;margin-bottom:8px;}
-.guide-rows{display:flex;flex-direction:column;gap:4px;}
-.guide-row{display:grid;grid-template-columns:32px 1fr;align-items:center;gap:6px;}
-.guide-num{font-family:var(--font-display);font-size:14px;text-align:center;height:22px;display:flex;align-items:center;justify-content:center;border-radius:2px;flex-shrink:0;}
-.guide-track{position:relative;height:22px;background:rgba(255,255,255,0.04);border-radius:2px;overflow:hidden;}
-.guide-fill{position:absolute;left:0;top:0;height:100%;border-radius:2px;transition:width .6s ease;}
-.guide-content{position:absolute;inset:0;display:flex;align-items:center;padding:0 7px;gap:5px;}
-.guide-icon{font-size:13px;line-height:1;flex-shrink:0;}
-.guide-text{font-size:11px;color:#fff;font-weight:500;white-space:nowrap;flex:1;overflow:hidden;text-overflow:ellipsis;}
-.guide-mm{font-family:var(--font-mono);font-size:9px;color:rgba(255,255,255,0.5);flex-shrink:0;}
+/* 진도 가이드 */
+.guide-panel{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:14px 18px;
+}
+.guide-rows{display:flex;flex-direction:column;gap:4px;margin-top:4px;}
+.guide-row{display:grid;grid-template-columns:48px 1fr;align-items:center;gap:8px;}
+.guide-num{
+  font-family:var(--font-d);font-size:20px;height:36px;
+  display:flex;align-items:center;justify-content:center;border-radius:4px;flex-shrink:0;
+}
+.guide-track{height:36px;position:relative;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;}
+.guide-fill{position:absolute;left:0;top:0;height:100%;border-radius:3px;}
+.guide-content{position:absolute;inset:0;display:flex;align-items:center;padding:0 10px;gap:8px;}
+.guide-icon{font-size:17px;line-height:1;flex-shrink:0;}
+.guide-text{font-size:14px;color:#fff;font-weight:500;white-space:nowrap;flex:1;overflow:hidden;text-overflow:ellipsis;}
+.guide-kr{font-size:13px;color:rgba(255,220,100,0.9);flex-shrink:0;white-space:nowrap;}
 
-.seismo-panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:12px 14px;height:100px;}
-.seismo-wrap{display:flex;align-items:flex-end;gap:3px;height:58px;margin-top:6px;}
-.seismo-bar{flex:1;background:var(--accent);border-radius:1px 1px 0 0;opacity:.7;transition:height .3s ease;}
-.ticker{grid-column:1/-1;background:var(--bg3);border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;overflow:hidden;height:44px;}
-.ticker-badge{background:var(--accent);color:#000;font-family:var(--font-mono);font-size:12px;font-weight:bold;letter-spacing:2px;padding:0 14px;height:100%;display:flex;align-items:center;white-space:nowrap;flex-shrink:0;}
+/* 세이스모 */
+.seismo-panel{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:14px 18px;height:110px;
+}
+.seismo-wrap{display:flex;align-items:flex-end;gap:4px;height:58px;margin-top:8px;}
+.seismo-bar{flex:1;border-radius:2px 2px 0 0;opacity:.75;transition:height .3s ease;}
+
+/* ══ 티커 (상단 1행) ══ */
+.ticker{
+  grid-column:1/-1;grid-row:1;
+  background:var(--bg3);border:1px solid var(--border);border-radius:4px;
+  display:flex;align-items:center;overflow:hidden;height:50px;
+}
+.ticker-badge{
+  background:var(--accent);color:#000;
+  font-family:var(--font-m);font-size:16px;font-weight:700;letter-spacing:3px;
+  padding:0 20px;height:100%;display:flex;align-items:center;flex-shrink:0;
+}
 .ticker-track{flex:1;overflow:hidden;height:100%;}
-.ticker-inner{display:flex;align-items:center;height:100%;white-space:nowrap;animation:ticker-scroll 50s linear infinite;}
-@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.ticker-item{font-family:var(--font-mono);font-size:13px;color:var(--text);padding:0 32px;border-right:1px solid var(--border);}
+.ticker-inner{
+  display:flex;align-items:center;height:100%;white-space:nowrap;
+  animation:scroll 50s linear infinite;
+}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-item{font-family:var(--font-m);font-size:17px;color:var(--text);padding:0 40px;border-right:1px solid var(--border);}
 .ticker-item span{color:var(--accent2);}
-.flash-overlay{position:fixed;inset:0;background:rgba(255,45,45,0.18);pointer-events:none;z-index:999;opacity:0;}
-.flash-overlay.active{animation:flash-anim 1.8s ease-out forwards;}
-@keyframes flash-anim{0%,15%{opacity:1}100%{opacity:0}}
-@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-.fade-in{animation:fadeIn .4s ease forwards;}
+
+/* ══ PIP 진원지 확대 미니맵 ══ */
+.pip-wrap{
+  position:absolute;right:10px;bottom:180px;
+  width:210px;height:210px;
+  background:#050b11;
+  border:1px solid var(--accent);
+  border-radius:6px;overflow:hidden;
+  box-shadow:0 0 18px rgba(0,180,255,0.35);
+  z-index:10;
+}
+.pip-label{
+  position:absolute;top:5px;left:8px;z-index:11;
+  font-family:var(--font-m);font-size:10px;color:var(--accent);letter-spacing:2px;
+  text-shadow:0 0 8px rgba(0,180,255,0.8);
+}
+.pip-loc{
+  position:absolute;bottom:5px;left:8px;right:8px;z-index:11;
+  font-size:11px;color:#fff;font-family:var(--font-b);font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 1px 6px #000;
+}
+#pip-map{width:100%;height:100%;display:block;}
+
+/* 플래시 */
+.flash{position:fixed;inset:0;background:rgba(255,45,45,0.18);pointer-events:none;z-index:999;opacity:0;}
+.flash.on{animation:flash 1.8s ease-out forwards;}
+@keyframes flash{0%,15%{opacity:1}100%{opacity:0}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.fi{animation:fadeIn .4s ease forwards;}
+@keyframes pipRing{0%{r:6;opacity:.8;stroke-width:1.5}100%{r:24;opacity:0;stroke-width:.5}}
 </style>
 </head>
 <body>
-<div class="flash-overlay" id="flash"></div>
+<div class="flash" id="flash"></div>
 <div class="layout">
-  <header class="header">
-    <div class="header-brand">
-      <div class="live-badge"><div class="live-dot"></div> LIVE</div>
-      <div>
-        <div class="brand-title">일본 지진 실시간 모니터</div>
-        <div class="brand-sub">Japan Earthquake Live Monitor · P2PQuake + Open-Meteo</div>
-      </div>
-    </div>
-    <div class="header-stats">
-      <div class="hstat"><div class="hstat-val" id="h-mag">—</div><div class="hstat-label">최근 규모</div></div>
-      <div class="hstat"><div class="hstat-val" id="h-shindo">—</div><div class="hstat-label">일본 최대진도</div></div>
-      <div class="hstat"><div class="hstat-val" id="h-count">—</div><div class="hstat-label">24시간 발생</div></div>
-      <div class="hstat"><div class="hstat-val" id="h-depth">—</div><div class="hstat-label">진원 깊이 km</div></div>
-    </div>
-    <div class="header-clock">
-      <div class="clock-time" id="clock">00:00:00</div>
-      <div class="clock-date" id="clock-date">—</div>
-    </div>
-  </header>
 
-  <div class="panel-left">
-    <div class="latest-eq">
-      <div class="eq-label">▶ 최근 발생 지진</div>
-      <div class="eq-main-loc" id="eq-loc">데이터 수신 중...</div>
-      <div class="eq-main-row">
-        <div class="eq-main-mag" id="eq-mag">—</div>
-        <div class="eq-main-info">
-          <div class="eq-info-item">발생시각 <span id="eq-time">—</span></div>
-          <div class="eq-info-item">진원 깊이 <span id="eq-depth">—</span></div>
-          <div class="eq-info-item">좌표 <span id="eq-coord">—</span></div>
-        </div>
-        <div class="shindo-box">
-          <div class="shindo-label-small">일본식<br><em>최대진도</em></div>
-          <div class="shindo-large sh-1" id="eq-shindo">—</div>
-          <div class="shindo-kr-note" id="eq-shindo-note">한국 기준
-약 MM —</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="weather-panel">
-      <div style="flex:1;min-width:0;">
-        <div class="weather-loc" id="wx-loc">진원지 날씨 로드 중...</div>
-        <div class="weather-main">
-          <div class="weather-icon" id="wx-icon">⏳</div>
-          <div>
-            <div style="display:flex;align-items:baseline;gap:2px;">
-              <div class="weather-temp" id="wx-temp">—</div>
-              <div class="weather-unit">°C</div>
-            </div>
-            <div class="weather-desc" id="wx-desc">—</div>
-          </div>
-        </div>
-      </div>
-      <div class="weather-details">
-        <div class="weather-detail">체감 <span id="wx-feel">—</span>°C</div>
-        <div class="weather-detail">풍속 <span id="wx-wind">—</span> km/h</div>
-        <div class="weather-detail" id="wx-updated" style="font-size:10px;color:var(--text2);">—</div>
-      </div>
-    </div>
-
-    <div class="eq-list-panel">
-      <div class="panel-title">
-        <span>◈ 최근 지진 이력</span>
-        <span id="list-updated" style="color:var(--text2);font-size:10px;">—</span>
-      </div>
-      <div class="eq-list-items" id="eq-list"></div>
-    </div>
-  </div>
-
-  <div class="panel-map">
-    <div class="map-label">◈ 진원지 분포 MAP</div>
-    <svg id="japan-map"></svg>
-    <div class="map-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#378add"></div>M3미만</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#fac775"></div>M3-4</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ff8c00"></div>M4-5</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ff2d2d"></div>M5이상</div>
-    </div>
-  </div>
-
-  <div class="panel-right">
-    <div class="region-panel">
-      <div class="panel-title">◈ 지역별 최대진도 (일본식)</div>
-      <div class="region-rows" id="region-list"></div>
-    </div>
-
-    <!-- 진도 가이드: 가로 바 + 아이콘 -->
-    <div class="shindo-guide">
-      <div class="guide-title">◈ 일본 진도(震度) — 체감 · 피해 단계</div>
-      <div class="guide-rows">
-
-        <div class="guide-row">
-          <div class="guide-num sh-1">1</div>
-          <div class="guide-track">
-            <div class="guide-fill" style="width:11%;background:#0c447c;"></div>
-            <div class="guide-content">
-              <span class="guide-icon">🪑</span>
-              <span class="guide-text">실내에서 조용히 있으면 느낌</span>
-              <span class="guide-mm">MM Ⅲ</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-row">
-          <div class="guide-num sh-2">2</div>
-          <div class="guide-track">
-            <div class="guide-fill" style="width:22%;background:#185fa5;"></div>
-            <div class="guide-content">
-              <span class="guide-icon">😴</span>
-              <span class="guide-text">수면 중 대부분 각성, 매달린 물체 흔들림</span>
-              <span class="guide-mm">MM Ⅳ</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-row">
-          <div class="guide-num sh-3">3</div>
-          <div class="guide-track">
-            <div class="guide-fill" style="width:33%;background:#3b6d11;"></div>
-            <div class="guide-content">
-              <span class="guide-icon">🚶</span>
-              <span class="guide-text">실외에서도 느낌, 선반 물건 흔들림</span>
-              <span class="guide-mm">MM Ⅴ</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-row">
-          <div class="guide-num sh-4">4</div>
-          <div class="guide-track">
-            <div class="guide-fill" style="width:44%;background:#854f0b;"></div>
-            <div class="guide-content">
-              <span class="guide-icon">🪟</span>
-              <span class="guide-text">전선 크게 흔들림, 선반 물건 떨어짐</span>
-              <span class="guide-mm">MM Ⅵ</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-row">
-          <div class="guide-num sh-5l">5약</div>
-          <div class="guide-track">
-            <div class="guide-fill" style="width:55%;background:#993c1d;"></div>
-            <div class="guide-content">
-              <span class="guide-icon">🏃</span>
-              <span class="guide-text">서 있기 불안정, 유리창 파손 시작</span>
-              <span class="guide-mm">MM Ⅶ</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-row">
-          <div class="guide-num sh-5u">5강</div>
-          <div class="guide-track">
-            <div class="guide-fill" style="width:64%;background:#a32d2d;"></div>
-            <div class="guide-content">
-              <span class="guide-icon">🪞</span>
-              <span class="guide-text">가구 전도, 내장 마감재·창문 파손</span>
-              <span class="guide-mm">MM Ⅶ~Ⅷ</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-row">
-          <div class="guide-num sh-6l">6약</div>
-          <div class="guide-track">
-            <div class="guide-fill" style="width:75%;background:#791f1f;"></div>
-            <div class="guide-content">
-              <span class="guide-icon">🧱</span>
-              <span class="guide-text">벽 균열·일부 붕괴, 서 있기 불가</span>
-              <span class="guide-mm">MM Ⅷ</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-row">
-          <div class="guide-num sh-6u">6강</div>
-          <div class="guide-track">
-            <div class="guide-fill" style="width:86%;background:#501313;"></div>
-            <div class="guide-content">
-              <span class="guide-icon">🏚️</span>
-              <span class="guide-text">목조 건물 대부분 기울거나 도괴</span>
-              <span class="guide-mm">MM Ⅸ</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-row">
-          <div class="guide-num sh-7">7</div>
-          <div class="guide-track" style="box-shadow:0 0 6px rgba(255,45,45,0.35);">
-            <div class="guide-fill" style="width:100%;background:linear-gradient(90deg,#a32d2d,#ff2d2d);"></div>
-            <div class="guide-content">
-              <span class="guide-icon">💥</span>
-              <span class="guide-text">내진 건물도 파괴, 지표 단층 발생</span>
-              <span class="guide-mm">MM Ⅹ~Ⅻ</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <div class="seismo-panel">
-      <div class="panel-title">◈ 규모 분포 (최근 20건)</div>
-      <div class="seismo-wrap" id="seismo-bars"></div>
-    </div>
-  </div>
-
+  <!-- 티커 (상단) -->
   <div class="ticker">
     <div class="ticker-badge">▶ 속보</div>
     <div class="ticker-track">
@@ -347,12 +271,136 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
       </div>
     </div>
   </div>
+
+  <!-- 헤더 -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+      <div>
+        <div class="brand-title">일본 지진 실시간 모니터</div>
+        <div class="brand-sub">JAPAN EARTHQUAKE LIVE · P2PQuake + Open-Meteo</div>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-val" id="h-mag">—</div><div class="hstat-label">최근 규모</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-shindo">—</div><div class="hstat-label">일본 최대진도</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-count">—</div><div class="hstat-label">24시간 발생</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-depth">—</div><div class="hstat-label">진원깊이 km</div></div>
+    </div>
+    <div class="clock-wrap">
+      <div class="clock-time" id="clock">00:00:00</div>
+      <div class="clock-date" id="clock-date">—</div>
+    </div>
+  </header>
+
+  <!-- 좌측 -->
+  <div class="panel-left">
+    <!-- 최신 지진 -->
+    <div class="eq-card">
+      <div class="eq-card-label">▶ 최근 발생 지진</div>
+      <div class="eq-loc" id="eq-loc">데이터 수신 중...</div>
+      <div class="eq-body">
+        <div class="eq-mag" id="eq-mag">—</div>
+        <div class="eq-meta">
+          <div class="eq-meta-row">발생시각 <b id="eq-time">—</b></div>
+          <div class="eq-meta-row">진원 깊이 <b id="eq-depth">—</b></div>
+          <div class="eq-meta-row">좌표 <b id="eq-coord">—</b></div>
+        </div>
+        <div class="shindo-box">
+          <div class="shindo-lbl">일본식<br><em>최대진도</em></div>
+          <div class="shindo-num sh-1" id="eq-shindo">—</div>
+          <div class="shindo-kr" id="eq-shindo-kr">한국 진도 —</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 날씨 -->
+    <div class="wx-card">
+      <div style="flex:1;min-width:0;">
+        <div class="wx-label" id="wx-loc">진원지 날씨 수신 중...</div>
+        <div class="wx-main">
+          <div class="wx-icon" id="wx-icon">⏳</div>
+          <div>
+            <div style="display:flex;align-items:baseline;gap:4px;">
+              <div class="wx-temp" id="wx-temp">—</div>
+              <div class="wx-unit">°C</div>
+            </div>
+            <div class="wx-desc" id="wx-desc">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="wx-details">
+        <div class="wx-detail">체감온도 <b id="wx-feel">—</b> °C</div>
+        <div class="wx-detail">풍속 <b id="wx-wind">—</b> km/h</div>
+        <div class="wx-detail" id="wx-upd" style="font-size:13px;color:var(--text2);">—</div>
+      </div>
+    </div>
+
+    <!-- 지진 목록 -->
+    <div class="eq-list-panel">
+      <div class="panel-hd">
+        <span>◈ 최근 지진 이력</span>
+        <span class="panel-hd-sm" id="list-upd">—</span>
+      </div>
+      <div class="eq-list-body">
+        <div id="eq-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 지도 -->
+  <div class="panel-map" style="position:relative;">
+    <div class="panel-hd">◈ 진원지 분포 MAP</div>
+    <div class="map-body"><svg id="japan-map"></svg></div>
+    <!-- PIP 진원지 확대 -->
+    <div class="pip-wrap">
+      <div class="pip-label">▶ 진원지 확대</div>
+      <svg id="pip-map"></svg>
+      <div class="pip-loc" id="pip-loc">—</div>
+    </div>
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#378add"></div>M3미만</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fac775"></div>M3~4</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff8c00"></div>M4~5</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff2d2d"></div>M5이상</div>
+    </div>
+  </div>
+
+  <!-- 우측 -->
+  <div class="panel-right">
+    <div class="region-panel">
+      <div class="panel-hd">◈ 지역별 최대진도 (일본식)</div>
+      <div class="region-body"><div id="region-list"></div></div>
+    </div>
+
+    <!-- 진도 가이드 -->
+    <div class="guide-panel">
+      <div class="panel-hd" style="padding:0 0 10px;border-bottom:1px solid var(--border);margin-bottom:4px;">◈ 일본 진도 — 피해 단계</div>
+      <div class="guide-rows">
+        <div class="guide-row"><div class="guide-num sh-1">1</div><div class="guide-track"><div class="guide-fill" style="width:11%;background:#0c447c;"></div><div class="guide-content"><span class="guide-icon">🪑</span><span class="guide-text">실내 조용히 있으면 느낌</span><span class="guide-kr">한국 진도 3</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-2">2</div><div class="guide-track"><div class="guide-fill" style="width:22%;background:#185fa5;"></div><div class="guide-content"><span class="guide-icon">😴</span><span class="guide-text">수면 중 각성, 물체 흔들림</span><span class="guide-kr">한국 진도 4</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-3">3</div><div class="guide-track"><div class="guide-fill" style="width:33%;background:#3b6d11;"></div><div class="guide-content"><span class="guide-icon">🚶</span><span class="guide-text">실외 감지, 선반 물건 흔들림</span><span class="guide-kr">한국 진도 5</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-4">4</div><div class="guide-track"><div class="guide-fill" style="width:44%;background:#854f0b;"></div><div class="guide-content"><span class="guide-icon">🪟</span><span class="guide-text">전선 흔들림, 물건 떨어짐</span><span class="guide-kr">한국 진도 6</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-5l">5약</div><div class="guide-track"><div class="guide-fill" style="width:55%;background:#993c1d;"></div><div class="guide-content"><span class="guide-icon">🏃</span><span class="guide-text">서 있기 불안, 유리창 파손</span><span class="guide-kr">한국 진도 7</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-5u">5강</div><div class="guide-track"><div class="guide-fill" style="width:64%;background:#a32d2d;"></div><div class="guide-content"><span class="guide-icon">🪞</span><span class="guide-text">가구 전도, 내장재 파손</span><span class="guide-kr">한국 진도 7~8</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-6l">6약</div><div class="guide-track"><div class="guide-fill" style="width:75%;background:#791f1f;"></div><div class="guide-content"><span class="guide-icon">🧱</span><span class="guide-text">벽 균열·붕괴, 이동 불가</span><span class="guide-kr">한국 진도 8</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-6u">6강</div><div class="guide-track"><div class="guide-fill" style="width:86%;background:#501313;"></div><div class="guide-content"><span class="guide-icon">🏚️</span><span class="guide-text">목조 건물 대부분 도괴</span><span class="guide-kr">한국 진도 9</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-7">7</div><div class="guide-track" style="box-shadow:0 0 8px rgba(255,45,45,0.3);"><div class="guide-fill" style="width:100%;background:linear-gradient(90deg,#a32d2d,#ff2d2d);"></div><div class="guide-content"><span class="guide-icon">💥</span><span class="guide-text">내진 건물도 파괴, 단층 발생</span><span class="guide-kr">한국 진도 10~12</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="seismo-panel">
+      <div class="panel-hd" style="padding:0 0 8px;border-bottom:1px solid var(--border);margin-bottom:0;">◈ 규모 분포 (최근 20건)</div>
+      <div class="seismo-wrap" id="seismo-bars"></div>
+    </div>
+  </div>
+
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script>
-const LOC_MAP = {
+const LOC_MAP={
   '青森県':'아오모리현','青森':'아오모리','岩手県':'이와테현','岩手':'이와테',
   '宮城県':'미야기현','宮城':'미야기','秋田県':'아키타현','秋田':'아키타',
   '山形県':'야마가타현','山形':'야마가타','福島県':'후쿠시마현','福島':'후쿠시마',
@@ -420,157 +468,223 @@ const LOC_MAP = {
   '北九州':'기타큐슈','那覇':'나하',
 };
 const LOC_KEYS=Object.keys(LOC_MAP).sort((a,b)=>b.length-a.length);
-function locKr(name){
-  if(!name)return'불명';
-  if(LOC_MAP[name])return LOC_MAP[name];
-  for(const key of LOC_KEYS){
-    if(name.includes(key)){
-      let r=LOC_MAP[key];
-      if(name.includes('沖')&&!r.includes('앞바다')&&!r.includes('근해'))r+=' 앞바다';
-      else if(name.includes('近海')&&!r.includes('근해'))r+=' 근해';
+function locKr(n){
+  if(!n)return'불명';
+  if(LOC_MAP[n])return LOC_MAP[n];
+  for(const k of LOC_KEYS){
+    if(n.includes(k)){
+      let r=LOC_MAP[k];
+      if(n.includes('沖')&&!r.includes('앞바다')&&!r.includes('근해'))r+=' 앞바다';
+      else if(n.includes('近海')&&!r.includes('근해'))r+=' 근해';
       return r;
     }
   }
-  return name;
+  return n;
 }
-const SCALE_MAP={'10':'1','20':'2','30':'3','40':'4','45':'5약','50':'5강','55':'6약','60':'6강','70':'7'};
-const SCALE_CLS={'1':'sh-1','2':'sh-2','3':'sh-3','4':'sh-4','5약':'sh-5l','5강':'sh-5u','6약':'sh-6l','6강':'sh-6u','7':'sh-7'};
-const SHINDO_TO_MM={'1':'MM Ⅲ','2':'MM Ⅳ','3':'MM Ⅴ','4':'MM Ⅵ','5약':'MM Ⅶ','5강':'MM Ⅶ~Ⅷ','6약':'MM Ⅷ','6강':'MM Ⅸ','7':'MM Ⅹ~Ⅻ'};
+const SM={'10':'1','20':'2','30':'3','40':'4','45':'5약','50':'5강','55':'6약','60':'6강','70':'7'};
+const SC={'1':'sh-1','2':'sh-2','3':'sh-3','4':'sh-4','5약':'sh-5l','5강':'sh-5u','6약':'sh-6l','6강':'sh-6u','7':'sh-7'};
+const KR={'1':'한국 진도 3','2':'한국 진도 4','3':'한국 진도 5','4':'한국 진도 6','5약':'한국 진도 7','5강':'한국 진도 7~8','6약':'한국 진도 8','6강':'한국 진도 9','7':'한국 진도 10~12'};
 function wxCode(c){
-  if(c===0)return{icon:'☀️',desc:'맑음'};
-  if(c<=2)return{icon:'⛅',desc:'구름 조금'};
-  if(c===3)return{icon:'☁️',desc:'흐림'};
-  if(c<=49)return{icon:'🌫️',desc:'안개'};
-  if(c<=59)return{icon:'🌦️',desc:'이슬비'};
-  if(c<=69)return{icon:'🌧️',desc:'비'};
-  if(c<=79)return{icon:'🌨️',desc:'눈'};
-  if(c<=84)return{icon:'🌧️',desc:'소나기'};
-  if(c<=99)return{icon:'⛈️',desc:'뇌우'};
-  return{icon:'🌡️',desc:'—'};
+  if(c===0)return{i:'☀️',d:'맑음'};if(c<=2)return{i:'⛅',d:'구름 조금'};
+  if(c===3)return{i:'☁️',d:'흐림'};if(c<=49)return{i:'🌫️',d:'안개'};
+  if(c<=59)return{i:'🌦️',d:'이슬비'};if(c<=69)return{i:'🌧️',d:'비'};
+  if(c<=79)return{i:'🌨️',d:'눈'};if(c<=84)return{i:'🌧️',d:'소나기'};
+  if(c<=99)return{i:'⛈️',d:'뇌우'};return{i:'🌡️',d:'—'};
 }
-function magColor(m){if(m>=5)return'#ff2d2d';if(m>=4)return'#ff8c00';if(m>=3)return'#fac775';return'#378add';}
-function magClass(m){if(m>=5)return'danger';if(m>=4)return'warn';return'';}
-function toJST(str){
-  if(!str)return'—';
-  try{return new Date(str).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});}
-  catch(e){return str.slice(0,19);}
+function mc(m){if(m>=5)return'danger';if(m>=4)return'warn';return'';}
+function mcol(m){if(m>=5)return'#ff2d2d';if(m>=4)return'#ff8c00';if(m>=3)return'#fac775';return'#378add';}
+function jst(s){
+  if(!s)return'—';
+  try{return new Date(s).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+  catch(e){return s.slice(0,19);}
 }
-function updateClock(){
-  const jst=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Tokyo'}));
-  const pad=n=>String(n).padStart(2,'0');
-  document.getElementById('clock').textContent=`${pad(jst.getHours())}:${pad(jst.getMinutes())}:${pad(jst.getSeconds())}`;
-  const days=['일','월','화','수','목','금','토'];
-  document.getElementById('clock-date').textContent=`${jst.getFullYear()}.${pad(jst.getMonth()+1)}.${pad(jst.getDate())} (${days[jst.getDay()]}) JST`;
+
+// 시계
+function tick(){
+  const t=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Tokyo'}));
+  const p=n=>String(n).padStart(2,'0');
+  document.getElementById('clock').textContent=`${p(t.getHours())}:${p(t.getMinutes())}:${p(t.getSeconds())}`;
+  const d=['일','월','화','수','목','금','토'];
+  document.getElementById('clock-date').textContent=`${t.getFullYear()}.${p(t.getMonth()+1)}.${p(t.getDate())} (${d[t.getDay()]}) JST`;
 }
-setInterval(updateClock,1000);updateClock();
-let lastWxCoord=null;
-async function loadWeather(lat,lon,locName){
-  const key=`${lat?.toFixed(1)}_${lon?.toFixed(1)}`;
-  if(!lat||!lon||lastWxCoord===key)return;
-  lastWxCoord=key;
+setInterval(tick,1000);tick();
+
+// 날씨
+let lastWx=null;
+async function loadWx(lat,lon,name){
+  const k=`${lat?.toFixed(1)}_${lon?.toFixed(1)}`;
+  if(!lat||!lon||lastWx===k)return;
+  lastWx=k;
   try{
-    document.getElementById('wx-loc').textContent=locName+' 날씨 로드 중...';
+    document.getElementById('wx-loc').textContent=name+' 날씨 로드 중...';
     const d=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,windspeed_10m,apparent_temperature&timezone=Asia%2FTokyo`).then(r=>r.json());
     const c=d.current,wx=wxCode(c.weathercode);
-    document.getElementById('wx-loc').textContent='📍 '+locName+' 진원지 인근';
-    document.getElementById('wx-icon').textContent=wx.icon;
+    document.getElementById('wx-loc').textContent='📍 '+name+' 진원지 인근';
+    document.getElementById('wx-icon').textContent=wx.i;
     document.getElementById('wx-temp').textContent=Math.round(c.temperature_2m);
-    document.getElementById('wx-desc').textContent=wx.desc;
+    document.getElementById('wx-desc').textContent=wx.d;
     document.getElementById('wx-feel').textContent=Math.round(c.apparent_temperature);
     document.getElementById('wx-wind').textContent=Math.round(c.windspeed_10m);
-    document.getElementById('wx-updated').textContent='날씨 '+new Date().toLocaleTimeString('ko-KR')+' 갱신';
+    document.getElementById('wx-upd').textContent='날씨 '+new Date().toLocaleTimeString('ko-KR')+' 갱신';
   }catch(e){document.getElementById('wx-loc').textContent='날씨 데이터 없음';}
 }
-let mapReady=false,mapSvg,mapProj;
+
+// 지도
+let mapOk=false,mSvg,mProj;
 async function initMap(){
   try{
-    const topo=await d3.json('https://cdn.jsdelivr.net/npm/datamaps@0.5.10/src/js/data/jpn.topo.json');
+    const tp=await d3.json('https://cdn.jsdelivr.net/npm/datamaps@0.5.10/src/js/data/jpn.topo.json');
     const el=document.getElementById('japan-map');
-    const W=el.clientWidth||600,H=el.clientHeight||520;
-    mapSvg=d3.select('#japan-map').attr('viewBox',`0 0 ${W} ${H}`);
-    mapProj=d3.geoMercator().center([137.5,37]).scale(W*1.9).translate([W*0.42,H*0.48]);
-    mapSvg.selectAll('path.land').data(topojson.feature(topo,topo.objects.jpn).features).join('path')
-      .attr('class','land').attr('d',d3.geoPath(mapProj))
+    const W=el.clientWidth||700,H=el.clientHeight||600;
+    mSvg=d3.select('#japan-map').attr('viewBox',`0 0 ${W} ${H}`);
+    mProj=d3.geoMercator().center([137.5,37]).scale(W*1.9).translate([W*0.42,H*0.48]);
+    mSvg.selectAll('path.land').data(topojson.feature(tp,tp.objects.jpn).features).join('path')
+      .attr('class','land').attr('d',d3.geoPath(mProj))
       .attr('fill','#0d1a24').attr('stroke','rgba(0,180,255,0.25)').attr('stroke-width','0.7');
-    mapReady=true;
-  }catch(e){console.error('지도 로드 실패',e);}
+    mapOk=true;
+  }catch(e){console.error('지도 실패',e);}
 }
-function drawEpicenters(quakes){
-  if(!mapReady||!mapSvg||!mapProj)return;
-  mapSvg.selectAll('.epi,.epi-ring').remove();
-  quakes.forEach((q,i)=>{
+function drawEpi(qs){
+  if(!mapOk||!mSvg||!mProj)return;
+  mSvg.selectAll('.epi,.ering').remove();
+  qs.forEach((q,i)=>{
     const h=q.earthquake?.hypocenter;
     if(!h?.latitude||!h?.longitude)return;
-    const[x,y]=mapProj([h.longitude,h.latitude]);
-    const m=h.magnitude||0,r=Math.max(4,m*2),col=magColor(m);
-    if(i===0){for(let k=0;k<2;k++){mapSvg.append('circle').attr('class','epi-ring').attr('cx',x).attr('cy',y).attr('r',r+4).attr('fill','none').attr('stroke',col).attr('stroke-width',1.5).attr('opacity',.8).style('animation',`epiRing ${1.5+k*.5}s ease-out ${k*.3}s infinite`);}}
-    mapSvg.append('circle').attr('class','epi').attr('cx',x).attr('cy',y).attr('r',i===0?r+1:Math.max(3,r-1)).attr('fill',col).attr('opacity',i===0?1:.55).attr('stroke',i===0?'#fff':'none').attr('stroke-width',i===0?1:0);
+    const[x,y]=mProj([h.longitude,h.latitude]);
+    const m=h.magnitude||0,r=Math.max(5,m*2.2),col=mcol(m);
+    if(i===0){
+      for(let k=0;k<2;k++)
+        mSvg.append('circle').attr('class','ering').attr('cx',x).attr('cy',y).attr('r',r+5)
+          .attr('fill','none').attr('stroke',col).attr('stroke-width',2).attr('opacity',.8)
+          .style('animation',`epiRing ${1.5+k*.5}s ease-out ${k*.3}s infinite`);
+    }
+    mSvg.append('circle').attr('class','epi').attr('cx',x).attr('cy',y)
+      .attr('r',i===0?r+2:Math.max(4,r-1))
+      .attr('fill',col).attr('opacity',i===0?1:.55)
+      .attr('stroke',i===0?'#fff':'none').attr('stroke-width',i===0?1.5:0);
   });
 }
-function drawSeismo(quakes){
-  const wrap=document.getElementById('seismo-bars');wrap.innerHTML='';
-  const maxM=Math.max(...quakes.map(q=>q.earthquake?.hypocenter?.magnitude||0),1);
-  quakes.slice(0,20).reverse().forEach((q,i)=>{
+function drawSeismo(qs){
+  const w=document.getElementById('seismo-bars');w.innerHTML='';
+  const mx=Math.max(...qs.map(q=>q.earthquake?.hypocenter?.magnitude||0),1);
+  qs.slice(0,20).reverse().forEach((q,i)=>{
     const m=q.earthquake?.hypocenter?.magnitude||0;
-    const bar=document.createElement('div');
-    bar.className='seismo-bar';
-    bar.style.cssText=`height:${Math.max(4,(m/Math.max(maxM,5))*100)}%;background:${magColor(m)};opacity:${.5+(i/20)*.5}`;
-    wrap.appendChild(bar);
+    const b=document.createElement('div');
+    b.className='seismo-bar';
+    b.style.cssText=`height:${Math.max(4,(m/Math.max(mx,5))*100)}%;background:${mcol(m)};opacity:${.45+(i/20)*.55}`;
+    w.appendChild(b);
   });
 }
-function buildTicker(quakes){
-  const items=quakes.slice(0,10).map(q=>{
+function buildTicker(qs){
+  const items=qs.slice(0,10).map(q=>{
     const h=q.earthquake?.hypocenter;if(!h)return null;
-    const sc=q.earthquake?.maxScale?SCALE_MAP[String(q.earthquake.maxScale)]:'';
-    return `<span class="ticker-item">${toJST(q.time)} · <span>${locKr(h.name||'불명')}</span> · M${(h.magnitude||0).toFixed(1)} · 심도 ${h.depth||'—'}km${sc?' · 최대진도 '+sc:''}</span>`;
+    const sc=q.earthquake?.maxScale?SM[String(q.earthquake.maxScale)]:'';
+    return `<span class="ticker-item">${jst(q.time)} · <span>${locKr(h.name||'불명')}</span> · M${(h.magnitude||0).toFixed(1)} · 심도 ${h.depth||'—'}km${sc?' · 최대진도 '+sc:''}</span>`;
   }).filter(Boolean);
   document.getElementById('ticker-inner').innerHTML=items.join('')+items.join('');
 }
-let prevLatestId=null;
+
+// PIP 진원지 확대 미니맵
+let pipTopo=null;
+async function drawPip(lat,lon,locName){
+  if(!lat||!lon)return;
+  const el=document.getElementById('pip-map');
+  const W=el.clientWidth||200,H=el.clientHeight||200;
+  const sv=d3.select('#pip-map');
+  sv.selectAll('*').remove();
+  sv.attr('viewBox',`0 0 ${W} ${H}`);
+  const proj=d3.geoMercator().center([lon,lat]).scale(W*14).translate([W/2,H/2]);
+  try{
+    if(!pipTopo)pipTopo=await d3.json('https://cdn.jsdelivr.net/npm/datamaps@0.5.10/src/js/data/jpn.topo.json');
+    sv.selectAll('path').data(topojson.feature(pipTopo,pipTopo.objects.jpn).features).join('path')
+      .attr('d',d3.geoPath(proj)).attr('fill','#0d1a24').attr('stroke','rgba(0,180,255,0.3)').attr('stroke-width','0.8');
+  }catch(e){}
+  const[cx,cy]=proj([lon,lat]);
+  for(let k=0;k<3;k++)
+    sv.append('circle').attr('cx',cx).attr('cy',cy).attr('r',6+k*7)
+      .attr('fill','none').attr('stroke','#ff2d2d')
+      .attr('stroke-width',1.5-k*.4).attr('opacity',.85-k*.25)
+      .style('animation',`pipRing ${1.2+k*.4}s ease-out ${k*.2}s infinite`);
+  sv.append('circle').attr('cx',cx).attr('cy',cy).attr('r',5).attr('fill','#ff2d2d').attr('stroke','#fff').attr('stroke-width',1.5);
+  sv.append('line').attr('x1',cx-14).attr('y1',cy).attr('x2',cx+14).attr('y2',cy).attr('stroke','rgba(255,45,45,0.4)').attr('stroke-width',1);
+  sv.append('line').attr('x1',cx).attr('y1',cy-14).attr('x2',cx).attr('y2',cy+14).attr('stroke','rgba(255,45,45,0.4)').attr('stroke-width',1);
+  document.getElementById('pip-loc').textContent=locName;
+}
+
+let prevId=null;
 async function loadData(){
   try{
     const data=await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=20').then(r=>r.json());
     if(!data?.length)return;
-    if(prevLatestId&&prevLatestId!==data[0].id){const fl=document.getElementById('flash');fl.classList.remove('active');void fl.offsetWidth;fl.classList.add('active');}
-    prevLatestId=data[0].id;
+    if(prevId&&prevId!==data[0].id){
+      const fl=document.getElementById('flash');
+      fl.classList.remove('on');void fl.offsetWidth;fl.classList.add('on');
+    }
+    prevId=data[0].id;
     const eq=data[0].earthquake,h=eq?.hypocenter;
     const mag=h?.magnitude?h.magnitude.toFixed(1):'—';
-    const rawScale=eq?.maxScale?(SCALE_MAP[String(eq.maxScale)]||'—'):'—';
-    const magEl=document.getElementById('h-mag');magEl.textContent=mag;magEl.className='hstat-val '+magClass(parseFloat(mag));
-    document.getElementById('h-shindo').textContent=rawScale;
+    const sc=eq?.maxScale?(SM[String(eq.maxScale)]||'—'):'—';
+    // 헤더
+    const me=document.getElementById('h-mag');me.textContent=mag;me.className='hstat-val '+mc(parseFloat(mag));
+    document.getElementById('h-shindo').textContent=sc;
     const cnt=data.filter(d=>{try{return Date.now()-new Date(d.time)<86400000;}catch(e){return false;}}).length;
     document.getElementById('h-count').textContent=cnt;
     document.getElementById('h-depth').textContent=h?.depth||'—';
+    // 최신 카드
     document.getElementById('eq-loc').textContent=locKr(h?.name);
-    const eqMagEl=document.getElementById('eq-mag');eqMagEl.textContent='M'+mag;eqMagEl.className='eq-main-mag '+magClass(parseFloat(mag));
-    document.getElementById('eq-time').textContent=toJST(data[0].time);
+    const me2=document.getElementById('eq-mag');me2.textContent='M'+mag;me2.className='eq-mag '+mc(parseFloat(mag));
+    document.getElementById('eq-time').textContent=jst(data[0].time);
     document.getElementById('eq-depth').textContent=h?.depth?h.depth+'km':'—';
     document.getElementById('eq-coord').textContent=h?.latitude?`${h.latitude.toFixed(1)}°N ${h.longitude.toFixed(1)}°E`:'—';
-    const shEl=document.getElementById('eq-shindo');shEl.textContent=rawScale;shEl.className='shindo-large '+(SCALE_CLS[rawScale]||'sh-1');
-    document.getElementById('eq-shindo-note').textContent=`한국 기준\n${SHINDO_TO_MM[rawScale]||'—'}`;
-    if(h?.latitude&&h?.longitude)loadWeather(h.latitude,h.longitude,locKr(h.name||'불명'));
-    document.getElementById('eq-list').innerHTML=data.slice(0,9).map(d=>{
+    const se=document.getElementById('eq-shindo');se.textContent=sc;se.className='shindo-num '+(SC[sc]||'sh-1');
+    document.getElementById('eq-shindo-kr').textContent=KR[sc]||'—';
+    // 날씨
+    if(h?.latitude&&h?.longitude){loadWx(h.latitude,h.longitude,locKr(h.name||'불명'));drawPip(h.latitude,h.longitude,locKr(h.name||'불명'));}
+    // 목록
+    document.getElementById('eq-list').innerHTML=data.slice(0,10).map(d=>{
       const dh=d.earthquake?.hypocenter;
       const m=dh?.magnitude?dh.magnitude.toFixed(1):'—';
-      return `<div class="eq-row fade-in"><div class="eq-row-mag ${magClass(parseFloat(m))}">M${m}</div><div class="eq-row-loc">${locKr(dh?.name)}</div><div class="eq-row-time">${toJST(d.time)}</div><div class="eq-row-depth">${dh?.depth?dh.depth+'km':'—'}</div></div>`;
+      return `<div class="eq-row fi"><div class="eq-row-mag ${mc(parseFloat(m))}">M${m}</div><div class="eq-row-loc">${locKr(dh?.name)}</div><div class="eq-row-time">${jst(d.time)}</div><div class="eq-row-depth">${dh?.depth?dh.depth+'km':'—'}</div></div>`;
     }).join('');
-    document.getElementById('list-updated').textContent='갱신: '+new Date().toLocaleTimeString('ko-KR');
-    const points=data[0].points||[];
-    if(points.length){
-      const sorted=[...points].sort((a,b)=>(b.scale||0)-(a.scale||0)).slice(0,13);
-      document.getElementById('region-list').innerHTML=sorted.map(r=>{
-        const sc=SCALE_MAP[String(r.scale)]||'—';
-        return `<div class="region-row"><span class="region-name">${locKr(r.addr)}</span><span class="shindo-badge ${SCALE_CLS[sc]||'sh-1'}">${sc}</span></div>`;
+    document.getElementById('list-upd').textContent='갱신: '+new Date().toLocaleTimeString('ko-KR');
+    // 지역별 진도 - 현(県)·도(都)·부(府) 단위 그루핑 (중복 제거)
+    const pts=data[0].points||[];
+    if(pts.length){
+      // 현급 이상 키만 사용 (시·구·정·촌 제외)
+      const PREF_ONLY_KEYS=LOC_KEYS.filter(k=>{
+        const v=LOC_MAP[k];
+        if(!v)return false;
+        // 현·도·부·도(道) 단위 + 앞바다·근해 등 지리명만
+        return k.includes('県')||k.includes('都')||k.includes('府')||k.includes('道')||
+               k.includes('沖')||k.includes('近海')||k.includes('地方')||k.includes('諸島')||
+               k.includes('半島')||k.includes('灘')||k.includes('列島')||k.includes('海')||
+               ['三陸','伊豆大島','能登','阿蘇','天草','奄美'].some(s=>k.includes(s));
+      });
+      const pm={};
+      pts.forEach(r=>{
+        if(!r.addr||!r.scale)return;
+        let pk=null;
+        for(const k of PREF_ONLY_KEYS){
+          if(r.addr.includes(k)&&LOC_MAP[k]){pk=LOC_MAP[k];break;}
+        }
+        if(!pk)return;
+        if(!pm[pk]||r.scale>pm[pk])pm[pk]=r.scale;
+      });
+      const sorted=Object.entries(pm).sort((a,b)=>b[1]-a[1]).slice(0,11);
+      document.getElementById('region-list').innerHTML=sorted.map(([name,scale])=>{
+        const s=SM[String(scale)]||'—';
+        return `<div class="region-row"><span class="region-name">${name}</span><span class="shindo-badge ${SC[s]||'sh-1'}">${s}</span></div>`;
       }).join('');
     }
-    drawEpicenters(data.filter(d=>d.earthquake?.hypocenter?.latitude));
-    drawSeismo(data);buildTicker(data);
-  }catch(e){console.error('로드 오류',e);}
+    drawEpi(data.filter(d=>d.earthquake?.hypocenter?.latitude));
+    drawSeismo(data);
+    buildTicker(data);
+  }catch(e){console.error('오류',e);}
 }
 (async()=>{await initMap();await loadData();setInterval(loadData,60000);})();
-const s=document.createElement('style');
-s.textContent='@keyframes epiRing{0%{r:8;opacity:.8;stroke-width:1.5}100%{r:28;opacity:0;stroke-width:0.5}}';
-document.head.appendChild(s);
+const ss=document.createElement('style');
+ss.textContent='@keyframes epiRing{0%{r:9;opacity:.8;stroke-width:2}100%{r:30;opacity:0;stroke-width:.5}}';
+document.head.appendChild(ss);
 </script>
 </body>
 </html>
