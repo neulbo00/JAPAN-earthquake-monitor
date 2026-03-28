@@ -192,18 +192,17 @@ body::before{content:'';position:fixed;inset:0;
 }
 .eq-list-body{flex:1;overflow:hidden;padding:4px 0;}
 .eq-row{
-  display:grid;grid-template-columns:64px 1fr 100px 68px;
-  align-items:center;padding:8px 16px;
-  border-bottom:1px solid rgba(0,180,255,0.05);gap:8px;
+  display:grid;grid-template-columns:70px 1fr auto;
+  align-items:center;padding:9px 16px;
+  border-bottom:1px solid rgba(0,180,255,0.05);gap:12px;
 }
 .eq-row:last-child{border-bottom:none;}
 .eq-row.alert-row{background:rgba(255,45,45,0.08);}
-.eq-row-mag{font-family:var(--font-d);font-size:28px;color:var(--accent);line-height:1;}
+.eq-row-mag{font-family:var(--font-d);font-size:30px;color:var(--accent);line-height:1;}
 .eq-row-mag.warn{color:var(--warn);}
 .eq-row-mag.danger{color:var(--danger);}
-.eq-row-loc{font-size:18px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.eq-row-time{font-family:var(--font-m);font-size:14px;color:var(--text2);text-align:right;}
-.eq-row-depth{font-family:var(--font-m);font-size:14px;color:var(--text2);text-align:right;}
+.eq-row-loc{font-size:19px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.eq-row-info{font-family:var(--font-m);font-size:16px;color:var(--text2);text-align:right;white-space:nowrap;}
 
 /* ══ 지도 패널 ══ */
 .panel-map{background:var(--bg2);border:1px solid var(--border);border-radius:6px;display:flex;flex-direction:column;overflow:hidden;}
@@ -685,7 +684,7 @@ async function loadData(){
     document.getElementById('eq-list').innerHTML=data.slice(0,10).map(d=>{
       const dh=d.earthquake?.hypocenter;
       const m=dh?.magnitude?dh.magnitude.toFixed(1):'—';
-      return `<div class="eq-row fi"><div class="eq-row-mag ${mc(parseFloat(m))}">M${m}</div><div class="eq-row-loc">${locKr(dh?.name)}</div><div class="eq-row-time">${jst(d.time)}</div><div class="eq-row-depth">${dh?.depth?dh.depth+'km':'—'}</div></div>`;
+      return `<div class="eq-row fi"><div class="eq-row-mag ${mc(parseFloat(m))}">M${m}</div><div class="eq-row-loc">${locKr(dh?.name)}</div><div class="eq-row-info">${dh?.depth?dh.depth+'km · ':''}${jst(d.time)}</div></div>`;
     }).join('');
     document.getElementById('list-upd').textContent='갱신: '+new Date().toLocaleTimeString('ko-KR');
     // 지역별 진도 — 시정촌 → 현 단위 변환 후 그루핑
