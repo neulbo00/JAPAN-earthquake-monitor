@@ -18,91 +18,124 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:1920px;height:1080px;background:var(--bg);color:var(--text);font-family:var(--font-b);overflow:hidden;}
-
-/* 배경 그리드 */
 body::before{content:'';position:fixed;inset:0;
   background-image:linear-gradient(rgba(0,180,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,180,255,0.03) 1px,transparent 1px);
   background-size:80px 80px;pointer-events:none;z-index:0;}
 
 .layout{
-  position:relative;z-index:1;
-  width:1920px;height:1080px;
+  position:relative;z-index:1;width:1920px;height:1080px;
   display:grid;
-  grid-template-columns:620px 1fr 500px;
-  grid-template-rows:96px 1fr 64px;
-  padding:20px;gap:14px;
+  grid-template-columns:640px 1fr 520px;
+  grid-template-rows:52px 112px 1fr;
+  padding:18px;gap:12px;
 }
+
+/* ══ 경보 오버레이 ══ */
+.alert-overlay{
+  display:none;position:fixed;inset:0;z-index:998;pointer-events:none;
+  border:6px solid var(--danger);
+  box-shadow:inset 0 0 60px rgba(255,45,45,0.3),0 0 60px rgba(255,45,45,0.3);
+  animation:alertPulse 0.6s ease-in-out infinite alternate;
+}
+.alert-overlay.active{display:block;}
+.alert-banner{
+  display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:1000;pointer-events:none;text-align:center;
+}
+.alert-banner.active{display:block;animation:alertBanner 0.4s ease-out;}
+.alert-banner-text{
+  font-family:var(--font-d);font-size:120px;color:var(--danger);
+  text-shadow:0 0 40px rgba(255,45,45,0.9),0 0 80px rgba(255,45,45,0.5);
+  letter-spacing:8px;line-height:1;
+}
+.alert-banner-sub{
+  font-family:var(--font-m);font-size:36px;color:#fff;
+  text-shadow:0 0 20px rgba(255,45,45,0.8);letter-spacing:4px;margin-top:8px;
+}
+@keyframes alertPulse{0%{opacity:0.4}100%{opacity:1}}
+@keyframes alertBanner{from{opacity:0;transform:translate(-50%,-50%) scale(0.8)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+
+/* ══ 티커 ══ */
+.ticker{
+  grid-column:1/-1;grid-row:1;
+  background:var(--bg3);border:1px solid var(--border);border-radius:4px;
+  display:flex;align-items:center;overflow:hidden;height:52px;
+}
+.ticker-badge{
+  background:var(--accent);color:#000;
+  font-family:var(--font-m);font-size:18px;font-weight:700;letter-spacing:3px;
+  padding:0 22px;height:100%;display:flex;align-items:center;flex-shrink:0;
+}
+.ticker-track{flex:1;overflow:hidden;height:100%;}
+.ticker-inner{display:flex;align-items:center;height:100%;white-space:nowrap;animation:scroll 50s linear infinite;}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-item{font-family:var(--font-m);font-size:19px;color:var(--text);padding:0 44px;border-right:1px solid var(--border);}
+.ticker-item span{color:var(--accent2);}
+.ticker-item.alert-tick{color:var(--danger);font-weight:bold;}
 
 /* ══ 헤더 ══ */
 .header{
-  grid-column:1/-1;
+  grid-column:1/-1;grid-row:2;
   display:flex;align-items:center;justify-content:space-between;
-  border-bottom:2px solid var(--border);padding-bottom:14px;
+  border-bottom:2px solid var(--border);padding-bottom:10px;
 }
 .live-badge{
   display:flex;align-items:center;gap:8px;
-  background:var(--danger);padding:6px 18px;border-radius:4px;
-  font-family:var(--font-m);font-size:20px;letter-spacing:3px;color:#fff;
+  background:var(--danger);padding:6px 20px;border-radius:4px;
+  font-family:var(--font-m);font-size:22px;letter-spacing:3px;color:#fff;
   box-shadow:0 0 20px rgba(255,45,45,0.6);flex-shrink:0;
 }
-.live-dot{width:10px;height:10px;border-radius:50%;background:#fff;animation:blink 1s infinite;}
+.live-dot{width:11px;height:11px;border-radius:50%;background:#fff;animation:blink 1s infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 .brand-title{font-family:var(--font-d);font-size:52px;letter-spacing:5px;color:#fff;text-shadow:0 0 30px rgba(0,180,255,0.5);line-height:1;}
-.brand-sub{font-size:15px;color:var(--accent);font-family:var(--font-m);letter-spacing:3px;margin-top:3px;}
+.brand-sub{font-size:16px;color:var(--accent);font-family:var(--font-m);letter-spacing:3px;margin-top:3px;}
 .header-brand{display:flex;align-items:center;gap:20px;}
-
 .header-stats{display:flex;gap:0;align-items:stretch;}
-.hstat{
-  text-align:center;border-left:2px solid var(--border);
-  padding:0 28px;display:flex;flex-direction:column;justify-content:center;
-}
-.hstat-val{font-family:var(--font-d);font-size:46px;color:var(--accent);line-height:1;}
+.hstat{text-align:center;border-left:2px solid var(--border);padding:0 26px;display:flex;flex-direction:column;justify-content:center;}
+.hstat-val{font-family:var(--font-d);font-size:50px;color:var(--accent);line-height:1;}
 .hstat-val.warn{color:var(--warn);}
-.hstat-val.danger{color:var(--danger);text-shadow:0 0 20px rgba(255,45,45,0.7);}
-.hstat-label{font-size:14px;color:var(--text2);letter-spacing:2px;margin-top:3px;}
-
-.clock-wrap{text-align:right;padding-left:28px;border-left:2px solid var(--border);}
+.hstat-val.danger{color:var(--danger);text-shadow:0 0 20px rgba(255,45,45,0.7);animation:dangerPulse 0.8s ease-in-out infinite alternate;}
+@keyframes dangerPulse{0%{text-shadow:0 0 20px rgba(255,45,45,0.7)}100%{text-shadow:0 0 40px rgba(255,45,45,1),0 0 60px rgba(255,45,45,0.5)}}
+.hstat-label{font-size:15px;color:var(--text2);letter-spacing:2px;margin-top:3px;}
+.clock-wrap{text-align:right;padding-left:26px;border-left:2px solid var(--border);}
 .clock-time{font-family:var(--font-m);font-size:52px;color:#fff;line-height:1;letter-spacing:2px;}
-.clock-date{font-family:var(--font-m);font-size:16px;color:var(--text2);margin-top:3px;}
+.clock-date{font-family:var(--font-m);font-size:17px;color:var(--text2);margin-top:3px;}
 
 /* ══ 공통 패널 ══ */
-.panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
 .panel-hd{
-  font-family:var(--font-m);font-size:18px;color:var(--accent);
+  font-family:var(--font-m);font-size:20px;color:var(--accent);
   letter-spacing:3px;padding:14px 18px 10px;
   border-bottom:1px solid var(--border);
   display:flex;justify-content:space-between;align-items:center;
 }
-.panel-hd-sm{font-size:14px;color:var(--text2);font-family:var(--font-m);letter-spacing:1px;}
+.panel-hd-sm{font-size:15px;color:var(--text2);font-family:var(--font-m);letter-spacing:1px;}
 
 /* ══ 좌측 패널 ══ */
-.panel-left{display:flex;flex-direction:column;gap:14px;}
+.panel-left{display:flex;flex-direction:column;gap:10px;min-height:0;}
 
-/* 최신 지진 카드 */
 .eq-card{
   background:var(--bg2);border:1px solid var(--border);border-radius:6px;
-  padding:20px 22px;position:relative;overflow:hidden;
+  padding:14px 18px;position:relative;overflow:hidden;flex-shrink:0;
+  transition:border-color 0.3s,box-shadow 0.3s;
 }
 .eq-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent);box-shadow:0 0 16px rgba(0,180,255,0.5);}
-.eq-card-label{font-family:var(--font-m);font-size:16px;color:var(--accent);letter-spacing:3px;margin-bottom:10px;}
-.eq-loc{font-size:30px;font-weight:700;color:#fff;margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.eq-body{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;}
+.eq-card.alert-card{border-color:var(--danger);box-shadow:0 0 20px rgba(255,45,45,0.3);}
+.eq-card.alert-card::before{background:var(--danger);box-shadow:0 0 16px rgba(255,45,45,0.8);}
+.eq-card-label{font-family:var(--font-m);font-size:16px;color:var(--accent);letter-spacing:3px;margin-bottom:6px;}
+.eq-loc{font-size:28px;font-weight:700;color:#fff;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.eq-loc.alert-loc{color:var(--danger);animation:dangerPulse 0.8s ease-in-out infinite alternate;}
+.eq-body{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;}
 .eq-mag{font-family:var(--font-d);font-size:80px;color:var(--accent);line-height:1;}
 .eq-mag.warn{color:var(--warn);text-shadow:0 0 24px rgba(255,140,0,0.5);}
-.eq-mag.danger{color:var(--danger);text-shadow:0 0 24px rgba(255,45,45,0.6);}
-.eq-meta{display:flex;flex-direction:column;gap:6px;}
+.eq-mag.danger{color:var(--danger);text-shadow:0 0 30px rgba(255,45,45,0.8);animation:dangerPulse 0.8s ease-in-out infinite alternate;font-size:90px;}
+.eq-meta{display:flex;flex-direction:column;gap:4px;}
 .eq-meta-row{font-size:18px;color:var(--text2);}
 .eq-meta-row b{color:var(--text);font-weight:700;}
-
-/* 진도 박스 */
-.shindo-box{display:flex;flex-direction:column;align-items:center;gap:6px;}
-.shindo-lbl{font-family:var(--font-m);font-size:13px;color:var(--text2);letter-spacing:1px;text-align:center;line-height:1.4;}
+.shindo-box{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.shindo-lbl{font-family:var(--font-m);font-size:12px;color:var(--text2);letter-spacing:1px;text-align:center;line-height:1.4;}
 .shindo-lbl em{color:var(--accent);font-style:normal;}
-.shindo-num{
-  width:80px;height:80px;font-family:var(--font-d);font-size:44px;
-  display:flex;align-items:center;justify-content:center;border-radius:6px;
-}
-.shindo-kr{font-size:14px;color:var(--text2);text-align:center;line-height:1.4;}
+.shindo-num{width:76px;height:76px;font-family:var(--font-d);font-size:42px;display:flex;align-items:center;justify-content:center;border-radius:6px;}
+.shindo-kr{font-size:13px;color:var(--text2);text-align:center;line-height:1.4;}
 .sh-1,.sh-2{background:#0c447c;color:#85b7eb;}
 .sh-3{background:#27500a;color:#c0dd97;}
 .sh-4{background:#633806;color:#fac775;}
@@ -112,33 +145,59 @@ body::before{content:'';position:fixed;inset:0;
 .sh-6u{background:#791f1f;color:#f09595;}
 .sh-7{background:#ff2d2d;color:#fff;box-shadow:0 0 24px rgba(255,45,45,0.8);}
 
-/* 날씨 카드 */
+/* ══ 진도 스펙트럼 바 ══ */
+.spectrum-panel{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:10px 16px;flex-shrink:0;
+}
+.spectrum-label{font-family:var(--font-m);font-size:14px;color:var(--accent);letter-spacing:2px;margin-bottom:6px;}
+.spectrum-bar{
+  height:20px;border-radius:3px;position:relative;overflow:hidden;
+  background:linear-gradient(90deg,
+    #0c447c 0%,#185fa5 12%,
+    #27500a 22%,#3b6d11 33%,
+    #633806 44%,#854f0b 55%,
+    #993c1d 64%,#a32d2d 73%,
+    #791f1f 84%,#ff2d2d 100%
+  );
+}
+.spectrum-needle{
+  position:absolute;top:-3px;bottom:-3px;width:3px;background:#fff;
+  box-shadow:0 0 8px #fff;border-radius:2px;
+  transition:left 0.5s ease;
+}
+.spectrum-ticks{display:flex;justify-content:space-between;margin-top:3px;}
+.spectrum-tick{font-family:var(--font-d);font-size:12px;color:var(--text2);}
+.spectrum-tick.active{color:#fff;font-size:14px;}
+
+/* ══ 날씨 카드 ══ */
 .wx-card{
   background:var(--bg2);border:1px solid var(--border);border-radius:6px;
-  padding:16px 20px;display:flex;align-items:center;gap:20px;
+  padding:10px 16px;display:flex;align-items:center;gap:16px;flex-shrink:0;
 }
-.wx-label{font-family:var(--font-m);font-size:16px;color:var(--accent);letter-spacing:2px;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.wx-main{display:flex;align-items:center;gap:12px;}
-.wx-icon{font-size:40px;line-height:1;}
-.wx-temp{font-family:var(--font-d);font-size:52px;color:#fff;line-height:1;}
+.wx-label{font-family:var(--font-m);font-size:15px;color:var(--accent);letter-spacing:2px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wx-main{display:flex;align-items:center;gap:10px;}
+.wx-icon{font-size:36px;line-height:1;}
+.wx-temp{font-family:var(--font-d);font-size:48px;color:#fff;line-height:1;}
 .wx-unit{font-size:20px;color:var(--text2);}
-.wx-desc{font-size:18px;color:var(--accent2);margin-top:2px;}
-.wx-details{display:flex;flex-direction:column;gap:5px;margin-left:auto;}
-.wx-detail{font-size:17px;color:var(--text2);font-family:var(--font-m);}
+.wx-desc{font-size:16px;color:var(--accent2);margin-top:2px;}
+.wx-details{display:flex;flex-direction:column;gap:3px;margin-left:auto;}
+.wx-detail{font-size:16px;color:var(--text2);font-family:var(--font-m);}
 .wx-detail b{color:var(--text);}
 
-/* 지진 목록 */
+/* ══ 지진 목록 ══ */
 .eq-list-panel{
   background:var(--bg2);border:1px solid var(--border);border-radius:6px;
-  padding:0;flex:1;overflow:hidden;display:flex;flex-direction:column;
+  padding:0;flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;
 }
-.eq-list-body{flex:1;overflow:hidden;padding:6px 0;}
+.eq-list-body{flex:1;overflow:hidden;padding:4px 0;}
 .eq-row{
-  display:grid;grid-template-columns:64px 1fr 100px 70px;
-  align-items:center;padding:9px 18px;
-  border-bottom:1px solid rgba(0,180,255,0.05);gap:10px;
+  display:grid;grid-template-columns:64px 1fr 100px 68px;
+  align-items:center;padding:8px 16px;
+  border-bottom:1px solid rgba(0,180,255,0.05);gap:8px;
 }
 .eq-row:last-child{border-bottom:none;}
+.eq-row.alert-row{background:rgba(255,45,45,0.08);}
 .eq-row-mag{font-family:var(--font-d);font-size:28px;color:var(--accent);line-height:1;}
 .eq-row-mag.warn{color:var(--warn);}
 .eq-row-mag.danger{color:var(--danger);}
@@ -147,96 +206,75 @@ body::before{content:'';position:fixed;inset:0;
 .eq-row-depth{font-family:var(--font-m);font-size:14px;color:var(--text2);text-align:right;}
 
 /* ══ 지도 패널 ══ */
-.panel-map{
-  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
-  display:flex;flex-direction:column;overflow:hidden;
-}
+.panel-map{background:var(--bg2);border:1px solid var(--border);border-radius:6px;display:flex;flex-direction:column;overflow:hidden;}
 .map-body{flex:1;padding:8px;}
 #japan-map{width:100%;height:100%;display:block;}
-.map-legend{
-  display:flex;gap:20px;justify-content:center;
-  padding:10px;border-top:1px solid var(--border);
+.map-legend{display:flex;gap:20px;justify-content:center;padding:8px;border-top:1px solid var(--border);}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:16px;color:var(--text2);font-family:var(--font-m);}
+.legend-dot{width:13px;height:13px;border-radius:50%;}
+
+/* ══ PIP ══ */
+.pip-wrap{
+  position:absolute;right:10px;bottom:180px;width:220px;height:220px;
+  background:#050b11;border:1px solid var(--accent);border-radius:6px;overflow:hidden;
+  box-shadow:0 0 18px rgba(0,180,255,0.35);z-index:10;
 }
-.legend-item{display:flex;align-items:center;gap:6px;font-size:15px;color:var(--text2);font-family:var(--font-m);}
-.legend-dot{width:12px;height:12px;border-radius:50%;}
+.pip-label{position:absolute;top:5px;left:8px;z-index:11;font-family:var(--font-m);font-size:11px;color:var(--accent);letter-spacing:2px;}
+.pip-loc{position:absolute;bottom:5px;left:8px;right:8px;z-index:11;font-size:12px;color:#fff;font-family:var(--font-b);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 6px #000;}
+#pip-map{width:100%;height:100%;display:block;}
 
 /* ══ 우측 패널 ══ */
-.panel-right{display:flex;flex-direction:column;gap:14px;}
-
-/* 지역별 진도 */
-.region-panel{
-  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
-  flex:1;overflow:hidden;display:flex;flex-direction:column;
-}
-.region-body{flex:1;overflow:hidden;padding:4px 0;}
-.region-row{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:7px 18px;border-bottom:1px solid rgba(0,180,255,0.05);
-}
+.panel-right{display:flex;flex-direction:column;gap:10px;min-height:0;}
+.region-panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
+.region-body{flex:1;overflow:hidden;padding:2px 0;}
+.region-row{display:flex;align-items:center;justify-content:space-between;padding:6px 16px;border-bottom:1px solid rgba(0,180,255,0.05);}
 .region-row:last-child{border-bottom:none;}
 .region-name{font-size:20px;color:var(--text);}
-.shindo-badge{
-  font-family:var(--font-d);font-size:22px;
-  width:44px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:4px;
-}
+.shindo-badge{font-family:var(--font-d);font-size:22px;width:42px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:4px;}
 
-/* 진도 가이드 */
-.guide-panel{
-  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
-  padding:14px 18px;
-}
-.guide-rows{display:flex;flex-direction:column;gap:4px;margin-top:4px;}
-.guide-row{display:grid;grid-template-columns:48px 1fr;align-items:center;gap:8px;}
-.guide-num{
-  font-family:var(--font-d);font-size:20px;height:36px;
-  display:flex;align-items:center;justify-content:center;border-radius:4px;flex-shrink:0;
-}
-.guide-track{height:36px;position:relative;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;}
+/* ══ 진도 가이드 ══ */
+.guide-panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;flex-shrink:0;}
+.guide-rows{display:flex;flex-direction:column;gap:3px;margin-top:4px;}
+.guide-row{display:grid;grid-template-columns:46px 1fr;align-items:center;gap:6px;}
+.guide-num{font-family:var(--font-d);font-size:19px;height:33px;display:flex;align-items:center;justify-content:center;border-radius:3px;flex-shrink:0;}
+.guide-track{height:33px;position:relative;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;}
 .guide-fill{position:absolute;left:0;top:0;height:100%;border-radius:3px;}
-.guide-content{position:absolute;inset:0;display:flex;align-items:center;padding:0 10px;gap:8px;}
-.guide-icon{font-size:17px;line-height:1;flex-shrink:0;}
+.guide-content{position:absolute;inset:0;display:flex;align-items:center;padding:0 8px;gap:6px;}
+.guide-icon{font-size:16px;line-height:1;flex-shrink:0;}
 .guide-text{font-size:14px;color:#fff;font-weight:500;white-space:nowrap;flex:1;overflow:hidden;text-overflow:ellipsis;}
-.guide-kr{font-size:13px;color:rgba(255,220,100,0.9);flex-shrink:0;white-space:nowrap;}
+.guide-kr{font-size:12px;color:rgba(255,220,100,0.9);flex-shrink:0;white-space:nowrap;}
 
-/* 세이스모 */
-.seismo-panel{
-  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
-  padding:14px 18px;height:110px;
-}
-.seismo-wrap{display:flex;align-items:flex-end;gap:4px;height:58px;margin-top:8px;}
+/* ══ 세이스모 ══ */
+.seismo-panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;height:90px;flex-shrink:0;}
+.seismo-wrap{display:flex;align-items:flex-end;gap:3px;height:48px;margin-top:6px;}
 .seismo-bar{flex:1;border-radius:2px 2px 0 0;opacity:.75;transition:height .3s ease;}
 
-/* ══ 티커 ══ */
-.ticker{
-  grid-column:1/-1;
-  background:var(--bg3);border:1px solid var(--border);border-radius:4px;
-  display:flex;align-items:center;overflow:hidden;height:54px;
-}
-.ticker-badge{
-  background:var(--accent);color:#000;
-  font-family:var(--font-m);font-size:16px;font-weight:700;letter-spacing:3px;
-  padding:0 20px;height:100%;display:flex;align-items:center;flex-shrink:0;
-}
-.ticker-track{flex:1;overflow:hidden;height:100%;}
-.ticker-inner{
-  display:flex;align-items:center;height:100%;white-space:nowrap;
-  animation:scroll 50s linear infinite;
-}
-@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.ticker-item{font-family:var(--font-m);font-size:17px;color:var(--text);padding:0 40px;border-right:1px solid var(--border);}
-.ticker-item span{color:var(--accent2);}
-
-/* 플래시 */
+/* ══ 플래시·경보 ══ */
 .flash{position:fixed;inset:0;background:rgba(255,45,45,0.18);pointer-events:none;z-index:999;opacity:0;}
-.flash.on{animation:flash 1.8s ease-out forwards;}
-@keyframes flash{0%,15%{opacity:1}100%{opacity:0}}
+.flash.on{animation:flash-ani 1.8s ease-out forwards;}
+@keyframes flash-ani{0%,15%{opacity:1}100%{opacity:0}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 .fi{animation:fadeIn .4s ease forwards;}
+@keyframes pipRing{0%{r:6;opacity:.8;stroke-width:1.5}100%{r:24;opacity:0;stroke-width:.5}}
+@keyframes epiRing{0%{r:9;opacity:.8;stroke-width:2}100%{r:30;opacity:0;stroke-width:.5}}
 </style>
 </head>
 <body>
 <div class="flash" id="flash"></div>
+<div class="alert-overlay" id="alert-overlay"></div>
+<div class="alert-banner" id="alert-banner">
+  <div class="alert-banner-text" id="alert-banner-text">강진 경보</div>
+  <div class="alert-banner-sub" id="alert-banner-sub">—</div>
+</div>
+
 <div class="layout">
+  <!-- 티커 -->
+  <div class="ticker">
+    <div class="ticker-badge">▶ 속보</div>
+    <div class="ticker-track">
+      <div class="ticker-inner" id="ticker-inner"><span class="ticker-item">데이터 수신 중...</span></div>
+    </div>
+  </div>
 
   <!-- 헤더 -->
   <header class="header">
@@ -261,8 +299,7 @@ body::before{content:'';position:fixed;inset:0;
 
   <!-- 좌측 -->
   <div class="panel-left">
-    <!-- 최신 지진 -->
-    <div class="eq-card">
+    <div class="eq-card" id="eq-card">
       <div class="eq-card-label">▶ 최근 발생 지진</div>
       <div class="eq-loc" id="eq-loc">데이터 수신 중...</div>
       <div class="eq-body">
@@ -280,7 +317,23 @@ body::before{content:'';position:fixed;inset:0;
       </div>
     </div>
 
-    <!-- 날씨 -->
+    <!-- 진도 스펙트럼 바 -->
+    <div class="spectrum-panel">
+      <div class="spectrum-label">◈ 진도 스펙트럼</div>
+      <div class="spectrum-bar"><div class="spectrum-needle" id="spectrum-needle" style="left:0%"></div></div>
+      <div class="spectrum-ticks">
+        <span class="spectrum-tick" id="st-1">1</span>
+        <span class="spectrum-tick" id="st-2">2</span>
+        <span class="spectrum-tick" id="st-3">3</span>
+        <span class="spectrum-tick" id="st-4">4</span>
+        <span class="spectrum-tick" id="st-5l">5약</span>
+        <span class="spectrum-tick" id="st-5u">5강</span>
+        <span class="spectrum-tick" id="st-6l">6약</span>
+        <span class="spectrum-tick" id="st-6u">6강</span>
+        <span class="spectrum-tick" id="st-7">7</span>
+      </div>
+    </div>
+
     <div class="wx-card">
       <div style="flex:1;min-width:0;">
         <div class="wx-label" id="wx-loc">진원지 날씨 수신 중...</div>
@@ -298,26 +351,28 @@ body::before{content:'';position:fixed;inset:0;
       <div class="wx-details">
         <div class="wx-detail">체감온도 <b id="wx-feel">—</b> °C</div>
         <div class="wx-detail">풍속 <b id="wx-wind">—</b> km/h</div>
-        <div class="wx-detail" id="wx-upd" style="font-size:13px;color:var(--text2);">—</div>
+        <div class="wx-detail" id="wx-upd" style="font-size:14px;color:var(--text2);">—</div>
       </div>
     </div>
 
-    <!-- 지진 목록 -->
     <div class="eq-list-panel">
       <div class="panel-hd">
         <span>◈ 최근 지진 이력</span>
         <span class="panel-hd-sm" id="list-upd">—</span>
       </div>
-      <div class="eq-list-body">
-        <div id="eq-list"></div>
-      </div>
+      <div class="eq-list-body"><div id="eq-list"></div></div>
     </div>
   </div>
 
   <!-- 지도 -->
-  <div class="panel-map">
+  <div class="panel-map" style="position:relative;">
     <div class="panel-hd">◈ 진원지 분포 MAP</div>
     <div class="map-body"><svg id="japan-map"></svg></div>
+    <div class="pip-wrap">
+      <div class="pip-label">▶ 진원지 확대</div>
+      <svg id="pip-map"></svg>
+      <div class="pip-loc" id="pip-loc">—</div>
+    </div>
     <div class="map-legend">
       <div class="legend-item"><div class="legend-dot" style="background:#378add"></div>M3미만</div>
       <div class="legend-item"><div class="legend-dot" style="background:#fac775"></div>M3~4</div>
@@ -332,8 +387,6 @@ body::before{content:'';position:fixed;inset:0;
       <div class="panel-hd">◈ 지역별 최대진도 (일본식)</div>
       <div class="region-body"><div id="region-list"></div></div>
     </div>
-
-    <!-- 진도 가이드 -->
     <div class="guide-panel">
       <div class="panel-hd" style="padding:0 0 10px;border-bottom:1px solid var(--border);margin-bottom:4px;">◈ 일본 진도 — 피해 단계</div>
       <div class="guide-rows">
@@ -348,22 +401,12 @@ body::before{content:'';position:fixed;inset:0;
         <div class="guide-row"><div class="guide-num sh-7">7</div><div class="guide-track" style="box-shadow:0 0 8px rgba(255,45,45,0.3);"><div class="guide-fill" style="width:100%;background:linear-gradient(90deg,#a32d2d,#ff2d2d);"></div><div class="guide-content"><span class="guide-icon">💥</span><span class="guide-text">내진 건물도 파괴, 단층 발생</span><span class="guide-kr">한국 진도 10~12</span></div></div></div>
       </div>
     </div>
-
     <div class="seismo-panel">
       <div class="panel-hd" style="padding:0 0 8px;border-bottom:1px solid var(--border);margin-bottom:0;">◈ 규모 분포 (최근 20건)</div>
       <div class="seismo-wrap" id="seismo-bars"></div>
     </div>
   </div>
 
-  <!-- 티커 -->
-  <div class="ticker">
-    <div class="ticker-badge">▶ 속보</div>
-    <div class="ticker-track">
-      <div class="ticker-inner" id="ticker-inner">
-        <span class="ticker-item">데이터 수신 중...</span>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
@@ -553,6 +596,33 @@ function buildTicker(qs){
   document.getElementById('ticker-inner').innerHTML=items.join('')+items.join('');
 }
 
+// PIP 진원지 확대 미니맵
+let pipTopo=null;
+async function drawPip(lat,lon,locName){
+  if(!lat||!lon)return;
+  const el=document.getElementById('pip-map');
+  const W=el.clientWidth||200,H=el.clientHeight||200;
+  const sv=d3.select('#pip-map');
+  sv.selectAll('*').remove();
+  sv.attr('viewBox',`0 0 ${W} ${H}`);
+  const proj=d3.geoMercator().center([lon,lat]).scale(W*14).translate([W/2,H/2]);
+  try{
+    if(!pipTopo)pipTopo=await d3.json('https://cdn.jsdelivr.net/npm/datamaps@0.5.10/src/js/data/jpn.topo.json');
+    sv.selectAll('path').data(topojson.feature(pipTopo,pipTopo.objects.jpn).features).join('path')
+      .attr('d',d3.geoPath(proj)).attr('fill','#0d1a24').attr('stroke','rgba(0,180,255,0.3)').attr('stroke-width','0.8');
+  }catch(e){}
+  const[cx,cy]=proj([lon,lat]);
+  for(let k=0;k<3;k++)
+    sv.append('circle').attr('cx',cx).attr('cy',cy).attr('r',6+k*7)
+      .attr('fill','none').attr('stroke','#ff2d2d')
+      .attr('stroke-width',1.5-k*.4).attr('opacity',.85-k*.25)
+      .style('animation',`pipRing ${1.2+k*.4}s ease-out ${k*.2}s infinite`);
+  sv.append('circle').attr('cx',cx).attr('cy',cy).attr('r',5).attr('fill','#ff2d2d').attr('stroke','#fff').attr('stroke-width',1.5);
+  sv.append('line').attr('x1',cx-14).attr('y1',cy).attr('x2',cx+14).attr('y2',cy).attr('stroke','rgba(255,45,45,0.4)').attr('stroke-width',1);
+  sv.append('line').attr('x1',cx).attr('y1',cy-14).attr('x2',cx).attr('y2',cy+14).attr('stroke','rgba(255,45,45,0.4)').attr('stroke-width',1);
+  document.getElementById('pip-loc').textContent=locName;
+}
+
 let prevId=null;
 async function loadData(){
   try{
@@ -563,6 +633,38 @@ async function loadData(){
       fl.classList.remove('on');void fl.offsetWidth;fl.classList.add('on');
     }
     prevId=data[0].id;
+    // ══ 경보 판정 (M6.5 이상 or 진도4 이상) ══
+    const magNum = parseFloat(mag);
+    const ALERT_SCALES = {'5약':true,'5강':true,'6약':true,'6강':true,'7':true};
+    const isAlert = magNum >= 6.5 || ALERT_SCALES[sc];
+    const isWarn  = magNum >= 5.0 || sc === '4';
+
+    // 카드 강조
+    const card = document.getElementById('eq-card');
+    card.classList.toggle('alert-card', isAlert);
+    const locEl = document.getElementById('eq-loc');
+    locEl.classList.toggle('alert-loc', isAlert);
+
+    // 경보 오버레이·배너 (새 지진이고 알림 조건일 때만)
+    if(prevId !== data[0].id && isAlert){
+      const ov = document.getElementById('alert-overlay');
+      const bn = document.getElementById('alert-banner');
+      ov.classList.add('active');
+      bn.classList.add('active');
+      document.getElementById('alert-banner-text').textContent = magNum >= 6.5 ? '강진 발생!' : '진도' + sc + ' 경보';
+      document.getElementById('alert-banner-sub').textContent = locKr(h?.name||'') + '  M' + mag;
+      setTimeout(()=>{ov.classList.remove('active');bn.classList.remove('active');}, 8000);
+    }
+
+    // 진도 스펙트럼 바 업데이트
+    const SCALE_POS = {'1':6,'2':17,'3':28,'4':39,'5약':50,'5강':61,'6약':72,'6강':83,'7':96};
+    const needlePos = SCALE_POS[sc] ?? 0;
+    document.getElementById('spectrum-needle').style.left = needlePos + '%';
+    ['1','2','3','4','5약','5강','6약','6강','7'].forEach(k=>{
+      const el = document.getElementById('st-'+k.replace('약','l').replace('강','u'));
+      if(el) el.classList.toggle('active', k === sc);
+    });
+
     const eq=data[0].earthquake,h=eq?.hypocenter;
     const mag=h?.magnitude?h.magnitude.toFixed(1):'—';
     const sc=eq?.maxScale?(SM[String(eq.maxScale)]||'—'):'—';
@@ -581,24 +683,116 @@ async function loadData(){
     const se=document.getElementById('eq-shindo');se.textContent=sc;se.className='shindo-num '+(SC[sc]||'sh-1');
     document.getElementById('eq-shindo-kr').textContent=KR[sc]||'—';
     // 날씨
-    if(h?.latitude&&h?.longitude)loadWx(h.latitude,h.longitude,locKr(h.name||'불명'));
+    if(h?.latitude&&h?.longitude){loadWx(h.latitude,h.longitude,locKr(h.name||'불명'));drawPip(h.latitude,h.longitude,locKr(h.name||'불명'));}
     // 목록
-    document.getElementById('eq-list').innerHTML=data.slice(0,8).map(d=>{
+    document.getElementById('eq-list').innerHTML=data.slice(0,10).map(d=>{
       const dh=d.earthquake?.hypocenter;
       const m=dh?.magnitude?dh.magnitude.toFixed(1):'—';
       return `<div class="eq-row fi"><div class="eq-row-mag ${mc(parseFloat(m))}">M${m}</div><div class="eq-row-loc">${locKr(dh?.name)}</div><div class="eq-row-time">${jst(d.time)}</div><div class="eq-row-depth">${dh?.depth?dh.depth+'km':'—'}</div></div>`;
     }).join('');
     document.getElementById('list-upd').textContent='갱신: '+new Date().toLocaleTimeString('ko-KR');
-    // 지역별 진도 - 현 단위 그루핑
+    // 지역별 진도 — 시정촌 → 현 단위 변환 후 그루핑
     const pts=data[0].points||[];
     if(pts.length){
+      // 시정촌명 → 현명 역방향 매핑 테이블
+      const CITY_TO_PREF={
+        '横浜':'가나가와현','横須賀':'가나가와현','鎌倉':'가나가와현','藤沢':'가나가와현',
+        '茅ヶ崎':'가나가와현','三浦':'가나가와현','大和':'가나가와현','海老名':'가나가와현',
+        '川崎':'가나가와현','相模原':'가나가와현','平塚':'가나가와현','小田原':'가나가와현',
+        '厚木':'가나가와현','座間':'가나가와현','綾瀬':'가나가와현','伊勢原':'가나가와현',
+        'さいたま':'사이타마현','川口':'사이타마현','所沢':'사이타마현','越谷':'사이타마현',
+        '川越':'사이타마현','熊谷':'사이타마현','上尾':'사이타마현','草加':'사이타마현',
+        '春日部':'사이타마현','狭山':'사이타마현','入間':'사이타마현','久喜':'사이타마현',
+        '千葉市':'치바현','船橋':'치바현','松戸':'치바현','市川':'치바현',
+        '柏':'치바현','習志野':'치바현','佐倉':'치바현','流山':'치바현',
+        '我孫子':'치바현','浦安':'치바현','市原':'치바현','八千代':'치바현',
+        '江戸川':'도쿄도','葛飾':'도쿄도','足立':'도쿄도','荒川':'도쿄도',
+        '墨田':'도쿄도','江東':'도쿄도','台東':'도쿄도','中央区':'도쿄도',
+        '千代田':'도쿄도','港区':'도쿄도','新宿':'도쿄도','渋谷':'도쿄도',
+        '世田谷':'도쿄도','目黒':'도쿄도','品川':'도쿄도','大田区':'도쿄도',
+        '杉並':'도쿄도','中野':'도쿄도','豊島':'도쿄도','北区':'도쿄도',
+        '板橋':'도쿄도','練馬':'도쿄도','文京':'도쿄도','新島':'도쿄도',
+        '八王子':'도쿄도','立川':'도쿄도','武蔵野':'도쿄도','三鷹':'도쿄도',
+        '仙台':'미야기현','石巻':'미야기현','塩竈':'미야기현','気仙沼':'미야기현',
+        '名取':'미야기현','多賀城':'미야기현','岩沼':'미야기현','登米':'미야기현',
+        '静岡市':'시즈오카현','浜松':'시즈오카현','沼津':'시즈오카현','富士':'시즈오카현',
+        '焼津':'시즈오카현','掛川':'시즈오카현','磐田':'시즈오카현','袋井':'시즈오카현',
+        '伊豆市':'시즈오카현','伊豆の国':'시즈오카현','熱海':'시즈오카현','三島':'시즈오카현',
+        '大月':'야마나시현','甲府':'야마나시현','富士吉田':'야마나시현',
+        '長野市':'나가노현','松本':'나가노현','上田':'나가노현','飯田':'나가노현',
+        '金沢':'이시카와현','七尾':'이시카와현','小松':'이시카와현','輪島':'이시카와현',
+        '名古屋':'아이치현','豊橋':'아이치현','岡崎':'아이치현','一宮':'아이치현',
+        '大阪市':'오사카부','堺':'오사카부','東大阪':'오사카부','豊中':'오사카부',
+        '神戸':'효고현','姫路':'효고현','尼崎':'효고현','明石':'효고현',
+        '京都市':'교토부','宇治':'교토부','亀岡':'교토부',
+        '奈良市':'나라현','橿原':'나라현','生駒':'나라현',
+        '盛岡':'이와테현','一関':'이와테현','奥州':'이와테현',
+        '秋田市':'아키타현','横手':'아키타현','大仙':'아키타현',
+        '山形市':'야마가타현','鶴岡':'야마가타현','酒田':'야마가타현',
+        '福島市':'후쿠시마현','郡山':'후쿠시마현','いわき':'후쿠시마현',
+        '水戸':'이바라키현','つくば':'이바라키현','日立':'이바라키현','土浦':'이바라키현',
+        '宇都宮':'도치기현','小山':'도치기현','栃木市':'도치기현',
+        '前橋':'군마현','高崎':'군마현','桐生':'군마현',
+        '新潟市':'니가타현','長岡':'니가타현','上越':'니가타현',
+        '富山市':'도야마현','高岡':'도야마현','射水':'도야마현',
+        '福井市':'후쿠이현','敦賀':'후쿠이현','越前':'후쿠이현',
+        '岐阜市':'기후현','大垣':'기후현','高山':'기후현',
+        '津市':'미에현','四日市':'미에현','鈴鹿':'미에현',
+        '大津':'시가현','草津市':'시가현','彦根':'시가현',
+        '和歌山市':'와카야마현','田辺':'와카야마현','新宮':'와카야마현',
+        '鳥取市':'돗토리현','米子':'돗토리현','倉吉':'돗토리현',
+        '松江':'시마네현','出雲':'시마네현','浜田':'시마네현',
+        '岡山市':'오카야마현','倉敷':'오카야마현','津山':'오카야마현',
+        '広島市':'히로시마현','福山':'히로시마현','呉':'히로시마현',
+        '山口市':'야마구치현','下関':'야마구치현','宇部':'야마구치현',
+        '徳島市':'도쿠시마현','鳴門':'도쿠시마현',
+        '高松':'가가와현','丸亀':'가가와현','坂出':'가가와현',
+        '松山':'에히메현','今治':'에히메현','新居浜':'에히메현',
+        '高知市':'고치현','南国':'고치현',
+        '福岡市':'후쿠오카현','北九州':'후쿠오카현','久留米':'후쿠오카현',
+        '佐賀市':'사가현','唐津':'사가현',
+        '長崎市':'나가사키현','佐世保':'나가사키현','諫早':'나가사키현',
+        '熊本市':'구마모토현','八代':'구마모토현','天草':'구마모토현',
+        '大分市':'오이타현','別府':'오이타현','中津':'오이타현',
+        '宮崎市':'미야자키현','都城':'미야자키현','延岡':'미야자키현',
+        '鹿児島市':'가고시마현','霧島':'가고시마현','薩摩川内':'가고시마현',
+        '那覇':'오키나와현','沖縄市':'오키나와현','うるま':'오키나와현',
+        '中井町':'가나가와현','二宮町':'가나가와현','大磯町':'가나가와현',
+        '寒川町':'가나가와현','愛川町':'가나가와현','清川村':'가나가와현',
+      };
+
+      // 주소에서 현명 추출 함수
+      function addrToPref(addr){
+        if(!addr) return null;
+        // 1) LOC_MAP에서 현급 직접 매칭
+        for(const k of LOC_KEYS){
+          if((k.includes('県')||k.includes('都')||k.includes('府')||k.includes('道'))
+              && addr.includes(k)) return LOC_MAP[k];
+        }
+        // 2) CITY_TO_PREF 역방향 매핑
+        for(const [city, pref] of Object.entries(CITY_TO_PREF)){
+          if(addr.includes(city)) return pref;
+        }
+        // 3) 시(市)·정(町)·구(区) 단위 추출해서 시 단위로 그루핑
+        // 일본 주소는 보통 "都市名区町名" 형태 → 앞에서 시(市)/구(区) 단위까지만 추출
+        const mCity = addr.match(/^(.+?[市区町村])/);
+        if(mCity) {
+          // 그 시/구를 LOC_MAP에서 한글로 변환 시도
+          const cityKey = mCity[1];
+          for(const k of LOC_KEYS){
+            if(cityKey.includes(k)&&LOC_MAP[k]) return LOC_MAP[k]+'('+cityKey+')';
+          }
+          return cityKey; // 변환 안 되면 원문 시명 사용
+        }
+        return locKr(addr);
+      }
+
       const pm={};
       pts.forEach(r=>{
-        if(!r.addr||!r.scale)return;
-        let pk=null;
-        for(const k of LOC_KEYS){if(r.addr.includes(k)&&LOC_MAP[k]){pk=LOC_MAP[k];break;}}
-        if(!pk)return;
-        if(!pm[pk]||r.scale>pm[pk])pm[pk]=r.scale;
+        if(!r.addr||!r.scale) return;
+        const pk = addrToPref(r.addr);
+        if(!pk) return;
+        if(!pm[pk]||r.scale>pm[pk]) pm[pk]=r.scale;
       });
       const sorted=Object.entries(pm).sort((a,b)=>b[1]-a[1]).slice(0,11);
       document.getElementById('region-list').innerHTML=sorted.map(([name,scale])=>{
