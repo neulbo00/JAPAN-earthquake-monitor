@@ -788,7 +788,8 @@ function initDates() {
 
 // ── API 데이터 로드 ──
 async function loadData(limit=100) {
-  const res = await fetch(`https://api.p2pquake.net/v2/jma/quake?limit=${limit}&order=-1`);
+  // history API: maxScale, hypocenter 등 구조 완전함
+  const res = await fetch(`https://api.p2pquake.net/v2/history?codes=551&limit=${Math.min(limit,100)}`);
   return await res.json();
 }
 
