@@ -1002,7 +1002,7 @@ function exportCSV(){
 // ── 통계 탭 ──
 async function loadStatsData(){
   try{
-    const raw=await loadData(500);
+    const raw=await loadDataSmart(500);
 
     const now=Date.now();
     const d24h=raw.filter(q=>{try{return now-new Date(q.earthquake?.time||q.time)<86400000;}catch(e){return false;}});
@@ -1235,7 +1235,7 @@ function renderDashMap(data){
   const tooltip=document.getElementById('map-tooltip');
   const svgEl=document.getElementById('dash-map');
 
-  const src = data || allData.slice(0,100);
+  const src = data || (accumulatedData && accumulatedData.length ? accumulatedData : allData).slice(0,100);
   const valid=src.filter(q=>q.earthquake?.hypocenter?.latitude&&q.earthquake?.hypocenter?.longitude);
 
   valid.forEach((q,i)=>{
@@ -1299,7 +1299,7 @@ function renderDashMap(data){
 
 let _mapItems=[];
 function zoomToItem(i){
-  const valid=(allData||[]).filter(q=>q.earthquake?.hypocenter?.latitude&&q.earthquake?.hypocenter?.longitude);
+  const valid=(accumulatedData && accumulatedData.length ? accumulatedData : allData).filter(q=>q.earthquake?.hypocenter?.latitude&&q.earthquake?.hypocenter?.longitude&&q.earthquake.hypocenter.latitude!==0&&q.earthquake.hypocenter.longitude!==0);
   if(!valid[i])return;
   const q=valid[i];
   const h=q.earthquake.hypocenter;
