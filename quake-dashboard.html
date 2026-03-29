@@ -843,7 +843,13 @@ function scaleStrToNum(s) {
 
 async function loadDataSmart(limit=100) {
   const acc = await loadAccumulated();
-  if(acc && acc.length > 0) return acc.slice(0, limit);
+  if(acc && acc.length > 0) {
+    // 진도/좌표 있는 항목 비율 체크
+    const hasScale = acc.filter(q=>q.earthquake?.maxScale>0).length;
+    const hasCoord = acc.filter(q=>q.earthquake?.hypocenter?.latitude!==0).length;
+    console.log(`[데이터] 진도있음:${hasScale}/${acc.length} 좌표있음:${hasCoord}/${acc.length}`);
+    return acc.slice(0, limit);
+  }
   return await loadData(limit);
 }
 
