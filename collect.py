@@ -2,20 +2,22 @@
 """
 일본 지진 데이터 수집 스크립트
 소스: https://www.jma.go.jp/bosai/quake/data/list.json (기상청 공식 로우 데이터)
+      각 지진 상세 JSON으로 위도·경도·진도 보완
 실행: GitHub Actions 매시간 자동 실행
 저장: data/earthquakes.json (누적, 중복 제거, 최근 365일 보존)
 """
 
 import json
 import os
-import sys
 import time
 import requests
 from datetime import datetime, timezone, timedelta
 
 DATA_FILE  = "data/earthquakes.json"
 LIST_URL   = "https://www.jma.go.jp/bosai/quake/data/list.json"
-KEEP_DAYS  = 365   # 보존 기간 (일)
+DETAIL_BASE= "https://www.jma.go.jp/bosai/quake/data/"
+KEEP_DAYS  = 365
+RATE_WAIT  = 0.5   # 상세 JSON 요청 간격 (초)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (earthquake-monitor; github-actions)",
@@ -23,7 +25,6 @@ HEADERS = {
 }
 
 def fetch_list() -> list:
-    """기상청 list.json 취득 (최근 1개월치 목록)"""
     print(f"[fetch] {LIST_URL}")
     r = requests.get(LIST_URL, headers=HEADERS, timeout=30)
     r.raise_for_status()
@@ -31,22 +32,58 @@ def fetch_list() -> list:
     print(f"[fetch] {len(data)}건 수신")
     return data
 
+def fetch_detail(json_filename: str) -> dict:
+    """상세 JSON에서 lat, lon, maxInt 보완"""
+    if not json_filename:
+        return {}
+    url = DETAIL_BASE + json_filename
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=15)
+        if r.status_code != 200:
+            return {}
+        d = r.json()
+        result = {}
+        # 진원 정보
+        eq = d.get("earthquake", {})
+        hypo = eq.get("hypocenter", {})
+        if hypo.get("coordinate"):
+            coord = hypo["coordinate"]
+            # 좌표 형식: "+37.7+137.3-10/" 또는 {"lat":..., "lon":...}
+            if isinstance(coord, dict):
+                result["lat"] = str(coord.get("lat", ""))
+                result["lon"] = str(coord.get("lon", ""))
+            elif isinstance(coord, str):
+                import re
+                m = re.match(r'([+-][\d.]+)([+-][\d.]+)', coord)
+                if m:
+                    result["lat"] = m.group(1)
+                    result["lon"] = m.group(2)
+        # 최대진도
+        if eq.get("maxScale") is not None:
+            scale_map = {
+                10:"1", 20:"2", 30:"3", 40:"4",
+                45:"5弱", 50:"5強", 55:"6弱", 60:"6強", 70:"7"
+            }
+            result["mxInt"] = scale_map.get(eq["maxScale"], "")
+        elif d.get("intensity", {}).get("maxInt"):
+            result["mxInt"] = d["intensity"]["maxInt"]
+        return result
+    except Exception as e:
+        return {}
+
 def load_existing() -> dict:
-    """기존 누적 데이터 로드 (eid 기준 dict)"""
     if not os.path.exists(DATA_FILE):
         os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
         return {}
     try:
         with open(DATA_FILE, encoding="utf-8") as f:
             arr = json.load(f)
-        # eid를 키로 dict 변환
         return {item["eid"]: item for item in arr if "eid" in item}
     except Exception as e:
         print(f"[warn] 기존 파일 읽기 실패: {e}")
         return {}
 
 def save(records: dict):
-    """dict → 리스트로 변환, 발생일시 내림차순 정렬 후 저장"""
     arr = sorted(records.values(), key=lambda x: x.get("at", ""), reverse=True)
     os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
     with open(DATA_FILE, "w", encoding="utf-8") as f:
@@ -54,70 +91,76 @@ def save(records: dict):
     print(f"[save] {len(arr)}건 → {DATA_FILE}")
 
 def prune_old(records: dict) -> dict:
-    """KEEP_DAYS 이상 오래된 데이터 삭제"""
-    cutoff = datetime.now(timezone.utc) - timedelta(days=KEEP_DAYS)
-    before = len(records)
-    pruned = {
-        eid: item for eid, item in records.items()
-        if item.get("at", "") >= cutoff.strftime("%Y-%m-%dT%H:%M:%S+09:00")[:10]
-    }
-    removed = before - len(pruned)
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=KEEP_DAYS)).strftime("%Y-%m-%d")
+    pruned = {eid: item for eid, item in records.items()
+              if item.get("at", "")[:10] >= cutoff}
+    removed = len(records) - len(pruned)
     if removed:
         print(f"[prune] {removed}건 삭제 ({KEEP_DAYS}일 초과)")
     return pruned
 
-def normalize(raw_item: dict) -> dict:
-    """
-    기상청 list.json 항목을 정규화
-    주요 필드:
-      eid    : 지진 ID (예: "20240101001234")
-      at     : 발생일시 ISO8601 (예: "2024-01-01T16:10:00+09:00")
-      anm    : 진원지명 (예: "石川県能登地方")
-      mag    : 규모 (예: "7.6")
-      mxInt  : 最大震度 문자열 (예: "7", "5弱", "5強")
-      dep    : 震源深さ (예: "10")
-      lat    : 緯度 (예: "37.5")
-      lon    : 経度 (예: "137.2")
-      cod    : 情報種別コード (예: "VXSE51", "VXSE53" 등)
-      json   : 상세 JSON 파일명 (예: "20240101001234_20240101001500_VXSE53_1.json")
-    """
+def normalize(raw: dict) -> dict:
     return {
-        "eid":   raw_item.get("eid", ""),
-        "at":    raw_item.get("at", ""),
-        "anm":   raw_item.get("anm", ""),
-        "mag":   raw_item.get("mag", ""),
-        "mxInt": raw_item.get("mxInt", ""),
-        "dep":   raw_item.get("dep", ""),
-        "lat":   raw_item.get("lat", ""),
-        "lon":   raw_item.get("lon", ""),
-        "cod":   raw_item.get("cod", ""),
-        "json":  raw_item.get("json", ""),
+        "eid":   raw.get("eid", ""),
+        "at":    raw.get("at", ""),
+        "anm":   raw.get("anm", ""),
+        "mag":   raw.get("mag", ""),
+        "mxInt": raw.get("mxInt", ""),
+        "dep":   raw.get("dep", ""),
+        "lat":   raw.get("lat", ""),
+        "lon":   raw.get("lon", ""),
+        "cod":   raw.get("cod", ""),
+        "json":  raw.get("json", ""),
     }
 
 def main():
-    # 1. 기상청 list.json 취득
     raw_list = fetch_list()
-
-    # 2. 기존 데이터 로드
     existing = load_existing()
     before_count = len(existing)
 
-    # 3. 새 항목 머지 (eid 중복 제거)
-    new_count = 0
+    new_items = []
     for item in raw_list:
         eid = item.get("eid")
-        if not eid:
+        if not eid or eid in existing:
             continue
-        if eid not in existing:
-            existing[eid] = normalize(item)
-            new_count += 1
+        new_items.append(item)
 
-    print(f"[merge] 기존 {before_count}건 + 신규 {new_count}건 = {len(existing)}건")
+    print(f"[new] 신규 {len(new_items)}건 상세 데이터 수집 시작")
 
-    # 4. 오래된 데이터 정리
+    # 신규 항목만 상세 JSON 요청해서 lat/lon/mxInt 보완
+    for i, item in enumerate(new_items):
+        norm = normalize(item)
+
+        # list.json에 lat/lon/mxInt 없으면 상세 JSON에서 보완
+        needs_detail = (not norm["lat"] or norm["lat"] == "0") or not norm["mxInt"]
+        if needs_detail and norm["json"]:
+            detail = fetch_detail(norm["json"])
+            if detail.get("lat"):  norm["lat"]   = detail["lat"]
+            if detail.get("lon"):  norm["lon"]   = detail["lon"]
+            if detail.get("mxInt"): norm["mxInt"] = detail["mxInt"]
+            time.sleep(RATE_WAIT)
+
+        existing[norm["eid"]] = norm
+
+        if (i+1) % 10 == 0:
+            print(f"  {i+1}/{len(new_items)}건 처리중...")
+
+    print(f"[merge] 기존 {before_count}건 + 신규 {len(new_items)}건 = {len(existing)}건")
+
+    # 기존 데이터 중 lat/lon 없는 것도 소급 보완 (최근 100건만)
+    no_coord = [(eid, item) for eid, item in existing.items()
+                if (not item.get("lat") or item["lat"] == "0") and item.get("json")]
+    no_coord.sort(key=lambda x: x[1].get("at",""), reverse=True)
+    if no_coord:
+        print(f"[補完] 좌표 없는 기존 데이터 {min(len(no_coord),50)}건 보완 시도")
+        for eid, item in no_coord[:50]:
+            detail = fetch_detail(item["json"])
+            if detail.get("lat"): item["lat"] = detail["lat"]
+            if detail.get("lon"): item["lon"] = detail["lon"]
+            if detail.get("mxInt") and not item.get("mxInt"): item["mxInt"] = detail["mxInt"]
+            time.sleep(RATE_WAIT)
+
     existing = prune_old(existing)
-
-    # 5. 저장
     save(existing)
     print("[done] 완료")
 
