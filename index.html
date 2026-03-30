@@ -80,20 +80,20 @@ body::before{content:'';position:fixed;inset:0;
 .shindo-lbl em{color:var(--accent);font-style:normal;}
 .shindo-num{width:74px;height:74px;font-family:var(--font-d);font-size:42px;display:flex;align-items:center;justify-content:center;border-radius:6px;}
 .shindo-kr{font-size:12px;color:var(--text2);text-align:center;}
-.sh-1,.sh-2{background:#0c447c;color:#85b7eb;}
-.sh-3{background:#27500a;color:#c0dd97;}
-.sh-4{background:#633806;color:#fac775;}
-.sh-5l{background:#854f0b;color:#fac775;}
-.sh-5u{background:#993c1d;color:#f5c4b3;}
-.sh-6l{background:#a32d2d;color:#f7c1c1;}
-.sh-6u{background:#791f1f;color:#f09595;}
-.sh-7{background:#ff2d2d;color:#fff;box-shadow:0 0 24px rgba(255,45,45,0.8);}
+.sh-1,.sh-2{background:#4D79BC;color:#fff;}
+.sh-3{background:#4D79BC;color:#fff;}
+.sh-4{background:#F5E642;color:#333;}
+.sh-5l{background:#E8853D;color:#fff;}
+.sh-5u{background:#E06020;color:#fff;}
+.sh-6l{background:#C0392B;color:#fff;}
+.sh-6u{background:#8B0000;color:#fff;}
+.sh-7{background:#7B0D7F;color:#fff;box-shadow:0 0 24px rgba(123,13,127,0.6);}
 @keyframes dangerPulse{0%{text-shadow:0 0 20px rgba(255,45,45,0.7)}100%{text-shadow:0 0 40px rgba(255,45,45,1),0 0 60px rgba(255,45,45,0.5)}}
 
 /* 진도 스펙트럼 */
 .spectrum-panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:9px 14px;flex-shrink:0;}
 .spectrum-label{font-family:var(--font-m);font-size:13px;color:var(--accent);letter-spacing:2px;margin-bottom:5px;}
-.spectrum-bar{height:18px;border-radius:3px;position:relative;overflow:hidden;background:linear-gradient(90deg,#0c447c 0%,#185fa5 12%,#27500a 22%,#3b6d11 33%,#633806 44%,#854f0b 55%,#993c1d 64%,#a32d2d 73%,#791f1f 84%,#ff2d2d 100%);}
+.spectrum-bar{height:18px;border-radius:3px;position:relative;overflow:hidden;background:linear-gradient(90deg,#4D79BC 0%,#4D79BC 30%,#F5E642 38%,#E8853D 50%,#E06020 60%,#C0392B 70%,#8B0000 82%,#7B0D7F 100%);}
 .spectrum-needle{position:absolute;top:-3px;bottom:-3px;width:3px;background:#fff;box-shadow:0 0 8px #fff;border-radius:2px;transition:left 0.5s ease;}
 .spectrum-ticks{display:flex;justify-content:space-between;margin-top:3px;}
 .spectrum-tick{font-family:var(--font-d);font-size:12px;color:var(--text2);}
@@ -394,15 +394,15 @@ body::before{content:'';position:fixed;inset:0;
     <div class="guide-panel">
       <div class="panel-hd" style="padding:0 0 6px;border-bottom:1px solid var(--border);margin-bottom:3px;">◈ 일본 진도(JMA) — 피해 단계</div>
       <div class="guide-rows">
-        <div class="guide-row"><div class="guide-num sh-1">1</div><div class="guide-track"><div class="guide-fill" style="width:11%;background:#0c447c;"></div><div class="guide-content"><span class="guide-icon">🪑</span><span class="guide-text">실내 조용히 있으면 느낌</span><span class="guide-kr">한국 진도 3</span></div></div></div>
-        <div class="guide-row"><div class="guide-num sh-2">2</div><div class="guide-track"><div class="guide-fill" style="width:22%;background:#185fa5;"></div><div class="guide-content"><span class="guide-icon">😴</span><span class="guide-text">수면 중 각성, 물체 흔들림</span><span class="guide-kr">한국 진도 4</span></div></div></div>
-        <div class="guide-row"><div class="guide-num sh-3">3</div><div class="guide-track"><div class="guide-fill" style="width:33%;background:#3b6d11;"></div><div class="guide-content"><span class="guide-icon">🚶</span><span class="guide-text">실외 감지, 선반 물건 흔들림</span><span class="guide-kr">한국 진도 5</span></div></div></div>
-        <div class="guide-row"><div class="guide-num sh-4">4</div><div class="guide-track"><div class="guide-fill" style="width:44%;background:#854f0b;"></div><div class="guide-content"><span class="guide-icon">🪟</span><span class="guide-text">전선 흔들림, 물건 떨어짐</span><span class="guide-kr">한국 진도 6</span></div></div></div>
-        <div class="guide-row"><div class="guide-num sh-5l">5약</div><div class="guide-track"><div class="guide-fill" style="width:55%;background:#993c1d;"></div><div class="guide-content"><span class="guide-icon">🏃</span><span class="guide-text">서 있기 불안, 유리창 파손</span><span class="guide-kr">한국 진도 7</span></div></div></div>
-        <div class="guide-row"><div class="guide-num sh-5u">5강</div><div class="guide-track"><div class="guide-fill" style="width:64%;background:#a32d2d;"></div><div class="guide-content"><span class="guide-icon">🪞</span><span class="guide-text">가구 전도, 내장재 파손</span><span class="guide-kr">한국 진도 7~8</span></div></div></div>
-        <div class="guide-row"><div class="guide-num sh-6l">6약</div><div class="guide-track"><div class="guide-fill" style="width:75%;background:#791f1f;"></div><div class="guide-content"><span class="guide-icon">🧱</span><span class="guide-text">벽 균열·붕괴, 이동 불가</span><span class="guide-kr">한국 진도 8</span></div></div></div>
-        <div class="guide-row"><div class="guide-num sh-6u">6강</div><div class="guide-track"><div class="guide-fill" style="width:86%;background:#501313;"></div><div class="guide-content"><span class="guide-icon">🏚️</span><span class="guide-text">목조 건물 대부분 도괴</span><span class="guide-kr">한국 진도 9</span></div></div></div>
-        <div class="guide-row"><div class="guide-num sh-7">7</div><div class="guide-track" style="box-shadow:0 0 8px rgba(255,45,45,0.3);"><div class="guide-fill" style="width:100%;background:linear-gradient(90deg,#a32d2d,#ff2d2d);"></div><div class="guide-content"><span class="guide-icon">💥</span><span class="guide-text">내진 건물도 파괴, 단층 발생</span><span class="guide-kr">한국 진도 10~12</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-1">1</div><div class="guide-track"><div class="guide-fill" style="width:11%;background:#4D79BC;"></div><div class="guide-content"><span class="guide-icon">🪑</span><span class="guide-text">실내 조용히 있으면 느낌</span><span class="guide-kr">한국 진도 3</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-2">2</div><div class="guide-track"><div class="guide-fill" style="width:22%;background:#4D79BC;"></div><div class="guide-content"><span class="guide-icon">😴</span><span class="guide-text">수면 중 각성, 물체 흔들림</span><span class="guide-kr">한국 진도 4</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-3">3</div><div class="guide-track"><div class="guide-fill" style="width:33%;background:#4D79BC;"></div><div class="guide-content"><span class="guide-icon">🚶</span><span class="guide-text">실외 감지, 선반 물건 흔들림</span><span class="guide-kr">한국 진도 5</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-4">4</div><div class="guide-track"><div class="guide-fill" style="width:44%;background:#F5E642;"></div><div class="guide-content"><span class="guide-icon">🪟</span><span class="guide-text">전선 흔들림, 물건 떨어짐</span><span class="guide-kr">한국 진도 6</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-5l">5약</div><div class="guide-track"><div class="guide-fill" style="width:55%;background:#E8853D;"></div><div class="guide-content"><span class="guide-icon">🏃</span><span class="guide-text">서 있기 불안, 유리창 파손</span><span class="guide-kr">한국 진도 7</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-5u">5강</div><div class="guide-track"><div class="guide-fill" style="width:64%;background:#E06020;"></div><div class="guide-content"><span class="guide-icon">🪞</span><span class="guide-text">가구 전도, 내장재 파손</span><span class="guide-kr">한국 진도 7~8</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-6l">6약</div><div class="guide-track"><div class="guide-fill" style="width:75%;background:#C0392B;"></div><div class="guide-content"><span class="guide-icon">🧱</span><span class="guide-text">벽 균열·붕괴, 이동 불가</span><span class="guide-kr">한국 진도 8</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-6u">6강</div><div class="guide-track"><div class="guide-fill" style="width:86%;background:#8B0000;"></div><div class="guide-content"><span class="guide-icon">🏚️</span><span class="guide-text">목조 건물 대부분 도괴</span><span class="guide-kr">한국 진도 9</span></div></div></div>
+        <div class="guide-row"><div class="guide-num sh-7">7</div><div class="guide-track" style="box-shadow:0 0 8px rgba(123,13,127,0.4);"><div class="guide-fill" style="width:100%;background:linear-gradient(90deg,#8B0000,#7B0D7F);"></div><div class="guide-content"><span class="guide-icon">💥</span><span class="guide-text">내진 건물도 파괴, 단층 발생</span><span class="guide-kr">한국 진도 10~12</span></div></div></div>
       </div>
     </div>
   </div>
