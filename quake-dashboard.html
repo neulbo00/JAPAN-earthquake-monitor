@@ -431,6 +431,7 @@ input[type="range"]::-webkit-slider-thumb {
             <button onclick="toggleLayer('hist')"     id="btn-hist"     class="layer-btn active">과거진도7↑</button>
             <button onclick="toggleLayer('nuclear')"  id="btn-nuclear"  class="layer-btn">원전</button>
             <button onclick="toggleLayer('thermal')"  id="btn-thermal"  class="layer-btn">화력발전소</button>
+            <button onclick="toggleLayer('nankai')"   id="btn-nankai"   class="layer-btn active">난카이 트로프</button>
             <button onclick="toggleLayer('radar')"    id="btn-radar"    class="layer-btn">🌧 강수레이더</button>
           </div>
         </div>
@@ -452,6 +453,7 @@ input[type="range"]::-webkit-slider-thumb {
           <div style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);font-family:var(--font-m);"><div style="width:10px;height:10px;border-radius:50%;background:#ff2d2d;"></div>M5이상</div>
           <div style="width:1px;height:14px;background:var(--border);"></div>
           <div style="display:flex;align-items:center;gap:4px;font-size:12px;color:rgba(255,165,0,0.9);font-family:var(--font-m);">◇ 과거진도7↑</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:12px;color:rgba(255,120,0,0.9);font-family:var(--font-m);"><div style="width:18px;height:0;border-top:2px dashed rgba(255,120,0,0.85);flex-shrink:0;"></div>난카이 트로프</div>
           <div style="display:flex;align-items:center;gap:4px;font-size:12px;color:#ff6b6b;font-family:var(--font-m);">⚛ 원전</div>
           <div style="display:flex;align-items:center;gap:4px;font-size:12px;color:#aaa;font-family:var(--font-m);">🏭 화력</div>
         </div>
@@ -1403,7 +1405,7 @@ function refreshAll(){
 
 // ── 초기화 ──
 // ── 레이어 상태 ──
-const layerState = { quake:true, hist:true, nuclear:false, thermal:false, radar:false };
+const layerState = { quake:true, hist:true, nuclear:false, thermal:false, nankai:true, radar:false };
 let plantsData = null;
 let radarTimer = null;
 
@@ -1429,14 +1431,48 @@ async function loadPlants(){
 
 function refreshLayers(){
   if(!dashMapOk||!dashSvg||!dashProj) return;
-  // 진원지 레이어
   dashSvg.selectAll('.dash-epi,.dash-ering').style('display', layerState.quake ? null : 'none');
-  // 과거진도7 레이어
   dashSvg.selectAll('.layer-hist').style('display', layerState.hist ? null : 'none');
-  // 원전 레이어
   dashSvg.selectAll('.layer-nuclear').style('display', layerState.nuclear ? null : 'none');
-  // 화력 레이어
   dashSvg.selectAll('.layer-thermal').style('display', layerState.thermal ? null : 'none');
+  dashSvg.selectAll('.layer-nankai').style('display', layerState.nankai ? null : 'none');
+}
+
+// ── 난카이 트로프 레이어 ──
+const NANKAI_COORDS=[
+  [130.0,31.0],[130.8,31.2],[131.5,31.5],[132.2,31.8],
+  [132.8,32.2],[133.5,32.5],[134.2,32.8],[135.0,33.2],
+  [135.8,33.5],[136.5,33.8],[137.2,34.0],[137.8,34.2],
+  [138.4,34.3],[139.0,34.3],[139.5,34.2],[140.0,33.8],
+];
+
+function drawNankaiLayer(){
+  if(!dashMapOk||!dashSvg||!dashProj) return;
+  dashSvg.selectAll('.layer-nankai').remove();
+  const pts=NANKAI_COORDS.map(([lon,lat])=>dashProj([lon,lat]));
+  const line=pts.map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  // 글로우
+  dashSvg.append('path').attr('class','layer-nankai')
+    .attr('d',line).attr('fill','none')
+    .attr('stroke','rgba(255,80,0,0.12)').attr('stroke-width',10)
+    .attr('stroke-linecap','round').attr('stroke-linejoin','round')
+    .style('display', layerState.nankai ? null : 'none');
+  // 메인 점선
+  dashSvg.append('path').attr('class','layer-nankai')
+    .attr('d',line).attr('fill','none')
+    .attr('stroke','rgba(255,120,0,0.85)').attr('stroke-width',2.2)
+    .attr('stroke-dasharray','8,4')
+    .attr('stroke-linecap','round').attr('stroke-linejoin','round')
+    .style('display', layerState.nankai ? null : 'none');
+  // 라벨
+  const mid=pts[Math.floor(pts.length/2)];
+  dashSvg.append('text').attr('class','layer-nankai')
+    .attr('x',mid[0]+5).attr('y',mid[1]-8)
+    .attr('fill','rgba(255,150,50,0.95)')
+    .attr('font-size','12px').attr('font-family','Share Tech Mono,monospace')
+    .attr('font-weight','700').attr('letter-spacing','1px')
+    .text('南海トラフ')
+    .style('display', layerState.nankai ? null : 'none');
 }
 
 function drawHistLayer(){
@@ -1661,6 +1697,7 @@ async function initDashMap(){
     renderDashMap(mapData);
     drawHistLayer();
     drawPlantLayer();
+    drawNankaiLayer();
   }catch(e){console.error('지도 로드 실패',e);}
 }
 
