@@ -437,7 +437,7 @@ input[type="range"]::-webkit-slider-thumb {
         <div style="flex:1;position:relative;min-height:0;">
           <svg id="dash-map" style="width:100%;height:100%;min-height:520px;display:block;"></svg>
           <!-- 강수 레이더 캔버스 오버레이 -->
-          <canvas id="radar-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none;opacity:0.65;mix-blend-mode:screen;"></canvas>
+          <canvas id="radar-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none;opacity:0.38;mix-blend-mode:screen;"></canvas>
           <!-- 레이더 시각 표시 -->
           <div id="radar-time" style="display:none;position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:#00ffcc;font-family:var(--font-m);font-size:12px;padding:4px 10px;border-radius:4px;border:1px solid rgba(0,255,204,0.4);letter-spacing:1px;"></div>
           <!-- 레이더 로딩 표시 -->
@@ -1141,6 +1141,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 // 공통 Chart.js 디졸브 애니메이션 옵션
 const chartAnim = { duration:800, easing:'easeInOutQuart' };
+const chartDefaults={
   color:'rgba(220,240,255,0.7)',
   grid:'rgba(0,180,255,0.08)',
   font:'Share Tech Mono',
@@ -1638,7 +1639,6 @@ let dashMapOk=false, dashSvg=null, dashProj=null;
 function mcol(m){if(m>=5)return'#ff2d2d';if(m>=4)return'#ff8c00';if(m>=3)return'#fac775';return'#378add';}
 
 async function initDashMap(){
-  // 데이터 먼저 로드
   const mapData = await loadDataSmart(100);
   if(dashMapOk){ renderDashMap(mapData); return; }
   try{
@@ -1646,15 +1646,17 @@ async function initDashMap(){
     const W=el.clientWidth||700, H=el.clientHeight||560;
     const tp=await d3.json('https://cdn.jsdelivr.net/npm/datamaps@0.5.10/src/js/data/jpn.topo.json');
     dashSvg=d3.select('#dash-map').attr('viewBox',`0 0 ${W} ${H}`);
-    dashProj=d3.geoMercator().center([136.0,36.5]).scale(W*2.4).translate([W*0.45,H*0.52]);
+    dashMapW=W; dashMapH=H;
+    dashProj=d3.geoMercator().center([133.5,36.5]).scale(W*2.2).translate([W*0.49,H*0.42]);
     dashSvg.selectAll('path.land')
       .data(topojson.feature(tp,tp.objects.jpn).features).join('path')
       .attr('class','land').attr('d',d3.geoPath(dashProj))
       .attr('fill','#0d1a24').attr('stroke','rgba(0,180,255,0.25)').attr('stroke-width','0.7');
     dashMapOk=true;
-    // 지도 배경 클릭 시 줌 복귀
-    dashSvg.on('click', function(event){
-      if(event.target.tagName === 'path') resetZoom();
+    // 어디서나 더블클릭 → 줌 리셋
+    dashSvg.on('dblclick', function(event){
+      event.preventDefault();
+      resetZoom();
     });
     renderDashMap(mapData);
     drawHistLayer();
@@ -1734,31 +1736,48 @@ function renderDashMap(data){
 
 let _mapItems=[];
 function zoomToItem(i){
-  // _mapItems는 renderDashMap에서 채워짐
   const q=_mapItems[i];
-  if(!q||!dashProj)return;
+  if(!q||!dashSvg||!dashProj)return;
   const h=q.earthquake.hypocenter;
-  const [x,y]=dashProj([h.longitude,h.latitude]);
+  if(!h||!h.longitude||!h.latitude||h.longitude===0)return;
+  const proj=dashProj([h.longitude,h.latitude]);
+  if(!proj)return;
+  const [x,y]=proj;
   zoomToEpicenter(q,h,x,y);
 }
 
 let zoomed=false;
+let currentViewBox=null;
+let dashMapW=700, dashMapH=560;
+
+function applyCanvasTransform(){
+  const canvas=document.getElementById('radar-canvas');
+  if(!canvas) return;
+  if(!currentViewBox){ canvas.style.transform=''; canvas.style.transformOrigin=''; return; }
+  const {vx,vy,vw,vh}=currentViewBox;
+  const sx=dashMapW/vw, sy=dashMapH/vh;
+  canvas.style.transformOrigin='0 0';
+  canvas.style.transform=`translate(${-vx*sx}px,${-vy*sy}px) scale(${sx},${sy})`;
+}
+
 function zoomToEpicenter(q,h,x,y){
   if(!dashSvg||!dashProj)return;
-  const el=document.getElementById('dash-map');
-  const W=el.clientWidth||700, H=el.clientHeight||560;
   const scale=3.5;
-  const vx=x-W/scale/2, vy=y-H/scale/2;
-  const vw=W/scale, vh=H/scale;
-  dashSvg.transition().duration(700).attr('viewBox',`${vx} ${vy} ${vw} ${vh}`);
+  const vx=x-dashMapW/scale/2, vy=y-dashMapH/scale/2;
+  const vw=dashMapW/scale, vh=dashMapH/scale;
+  const svgEl=document.getElementById('dash-map');
+  if(svgEl) svgEl.setAttribute('viewBox',`${vx} ${vy} ${vw} ${vh}`);
+  currentViewBox={vx,vy,vw,vh};
+  applyCanvasTransform();
   zoomed=true;
 }
 
 function resetZoom(){
-  if(!zoomed||!dashSvg)return;
-  const el=document.getElementById('dash-map');
-  const W=el.clientWidth||700, H=el.clientHeight||560;
-  dashSvg.transition().duration(500).attr('viewBox',`0 0 ${W} ${H}`);
+  if(!dashSvg)return;
+  const svgEl=document.getElementById('dash-map');
+  if(svgEl) svgEl.setAttribute('viewBox',`0 0 ${dashMapW} ${dashMapH}`);
+  currentViewBox=null;
+  applyCanvasTransform();
   zoomed=false;
 }
 
