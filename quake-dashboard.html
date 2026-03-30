@@ -92,7 +92,7 @@ body::after {
 
 /* 진도 스펙트럼 바 (통계용) */
 .spectrum-bar-outer{padding:0 4px;}
-.spectrum-bar-inner{height:22px;border-radius:4px;position:relative;overflow:hidden;background:linear-gradient(90deg,#0c447c 0%,#185fa5 12%,#27500a 22%,#3b6d11 33%,#633806 44%,#854f0b 55%,#993c1d 64%,#a32d2d 73%,#791f1f 84%,#ff2d2d 100%);}
+.spectrum-bar-inner{height:22px;border-radius:4px;position:relative;overflow:hidden;background:linear-gradient(90deg,#4D79BC 0%,#4D79BC 30%,#F5E642 38%,#E8853D 50%,#E06020 60%,#C0392B 70%,#8B0000 82%,#7B0D7F 100%);}
 .spectrum-needle-stat{position:absolute;top:-3px;bottom:-3px;width:4px;background:#fff;box-shadow:0 0 10px #fff;border-radius:2px;transition:left 0.8s cubic-bezier(.25,.8,.25,1);}
 .spectrum-ticks-stat{display:flex;justify-content:space-between;margin-top:4px;}
 .spectrum-ticks-stat span{font-family:var(--font-d);font-size:13px;color:var(--text2);transition:color .3s,font-size .3s;}
@@ -209,12 +209,14 @@ tbody td { padding: 11px 16px; color: var(--text); }
 .td-mag.c-danger { color: var(--danger); }
 .td-time { font-family: var(--font-m); font-size: 13px; color: var(--text2); white-space: nowrap; }
 .td-depth { font-family: var(--font-m); font-size: 13px; color: var(--text3); }
-.sh-1,.sh-2{background:#0c447c;color:#85b7eb;}
-.sh-3{background:#27500a;color:#c0dd97;}
-.sh-4{background:#633806;color:#fac775;}
-.sh-5l,.sh-5u{background:#993c1d;color:#f5c4b3;}
-.sh-6l,.sh-6u{background:#a32d2d;color:#f7c1c1;}
-.sh-7{background:#ff2d2d;color:#fff;}
+.sh-1,.sh-2{background:#4D79BC;color:#fff;}
+.sh-3{background:#4D79BC;color:#fff;}
+.sh-4{background:#F5E642;color:#333;}
+.sh-5l{background:#E8853D;color:#fff;}
+.sh-5u{background:#E06020;color:#fff;}
+.sh-6l{background:#C0392B;color:#fff;}
+.sh-6u{background:#8B0000;color:#fff;}
+.sh-7{background:#7B0D7F;color:#fff;}
 .empty-row td { text-align: center; padding: 40px; color: var(--text2); font-family: var(--font-m); font-size: 13px; }
 
 .table-footer {
@@ -435,7 +437,7 @@ input[type="range"]::-webkit-slider-thumb {
         <div style="flex:1;position:relative;min-height:0;">
           <svg id="dash-map" style="width:100%;height:100%;min-height:520px;display:block;"></svg>
           <!-- 강수 레이더 캔버스 오버레이 -->
-          <canvas id="radar-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none;opacity:0.38;mix-blend-mode:screen;"></canvas>
+          <canvas id="radar-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none;opacity:0.65;mix-blend-mode:screen;"></canvas>
           <!-- 레이더 시각 표시 -->
           <div id="radar-time" style="display:none;position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:#00ffcc;font-family:var(--font-m);font-size:12px;padding:4px 10px;border-radius:4px;border:1px solid rgba(0,255,204,0.4);letter-spacing:1px;"></div>
           <!-- 레이더 로딩 표시 -->
@@ -575,31 +577,37 @@ input[type="range"]::-webkit-slider-thumb {
       </div>
     </div>
 
-    <!-- 차트 2×2 -->
+    <!-- 차트 2×2 고정 높이 -->
     <div class="chart-grid">
-      <div class="panel chart-box">
+      <div class="panel chart-box" style="height:280px;">
         <div class="panel-title">규모별 발생 분포 (최근 100건)</div>
-        <canvas id="chart-mag" height="180"></canvas>
-      </div>
-      <div class="panel chart-box" style="grid-column:span 1;">
-        <div class="panel-title">진도별 발생 비율 (최근 100건)</div>
-        <div style="display:flex;align-items:center;justify-content:center;height:180px;">
-          <canvas id="chart-shindo" style="max-width:380px;max-height:180px;"></canvas>
+        <div style="position:relative;height:calc(100% - 36px);">
+          <canvas id="chart-mag" style="width:100%!important;height:100%!important;"></canvas>
         </div>
       </div>
-      <div class="panel chart-box" style="grid-column:span 2;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <div class="panel chart-box" style="height:280px;">
+        <div class="panel-title">진도별 발생 비율 (최근 100건)</div>
+        <div style="position:relative;height:calc(100% - 36px);">
+          <canvas id="chart-shindo" style="width:100%!important;height:100%!important;"></canvas>
+        </div>
+      </div>
+      <div class="panel chart-box" style="height:280px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;height:36px;">
           <div class="panel-title" style="margin-bottom:0;" id="hour-chart-title">시간대별 발생 건수 (최근 7일)</div>
           <div style="display:flex;gap:6px;">
             <button onclick="setHourRange(7)"  id="btn-7d"  class="layer-btn active">7일</button>
             <button onclick="setHourRange(30)" id="btn-30d" class="layer-btn">30일</button>
           </div>
         </div>
-        <canvas id="chart-hour" height="160"></canvas>
+        <div style="position:relative;height:calc(100% - 36px);">
+          <canvas id="chart-hour" style="width:100%!important;height:100%!important;"></canvas>
+        </div>
       </div>
-      <div class="panel chart-box" style="grid-column:span 2;">
-        <div class="panel-title">일별 발생 건수 추이 (최근 30일)</div>
-        <canvas id="chart-daily" height="160"></canvas>
+      <div class="panel chart-box" style="height:280px;">
+        <div class="panel-title" style="height:36px;margin-bottom:0;">일별 발생 건수 추이 (최근 30일)</div>
+        <div style="position:relative;height:calc(100% - 36px);">
+          <canvas id="chart-daily" style="width:100%!important;height:100%!important;"></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -1110,9 +1118,29 @@ function renderCharts(){
   });
 }
 
+// 기상청 공식 진도 색상
+const JMA_SHINDO_COLORS={
+  '1':'#4D79BC','2':'#4D79BC','3':'#4D79BC',
+  '4':'#F5E642',
+  '5약':'#E8853D','5강':'#E06020',
+  '6약':'#C0392B','6강':'#8B0000',
+  '7':'#7B0D7F'
+};
+const JMA_SHINDO_BG={
+  '1':'rgba(77,121,188,0.75)','2':'rgba(77,121,188,0.75)','3':'rgba(77,121,188,0.75)',
+  '4':'rgba(245,230,66,0.85)',
+  '5약':'rgba(232,133,61,0.85)','5강':'rgba(224,96,32,0.85)',
+  '6약':'rgba(192,57,43,0.85)','6강':'rgba(139,0,0,0.85)',
+  '7':'rgba(123,13,127,0.9)'
+};
+
+// 스펙트럼 바 CSS 그라데이션 업데이트 (기상청 색상 기준)
+document.addEventListener('DOMContentLoaded',()=>{
+  const bar=document.querySelector('.spectrum-bar-inner');
+  if(bar) bar.style.background='linear-gradient(90deg,#4D79BC 0%,#4D79BC 30%,#F5E642 38%,#E8853D 50%,#E06020 60%,#C0392B 70%,#8B0000 82%,#7B0D7F 100%)';
+});
 // 공통 Chart.js 디졸브 애니메이션 옵션
 const chartAnim = { duration:800, easing:'easeInOutQuart' };
-const chartDefaults={
   color:'rgba(220,240,255,0.7)',
   grid:'rgba(0,180,255,0.08)',
   font:'Share Tech Mono',
@@ -1151,6 +1179,7 @@ function drawMagChart(data){
         borderRadius:5,borderWidth:0}]
     },
     options:{
+      maintainAspectRatio:false,
       animation:chartAnim,
       plugins:{legend:{display:false}},
       scales:{
@@ -1197,6 +1226,7 @@ function drawHourChart(data){
       datasets:[{data:hours,backgroundColor:hourColors,borderRadius:4,borderWidth:0}]
     },
     options:{
+      maintainAspectRatio:false,
       animation:chartAnim,
       plugins:{
         legend:{display:false},
@@ -1235,6 +1265,7 @@ function drawDailyChart(data){
       tension:0.35,fill:true,borderWidth:2
     }]},
     options:{
+      maintainAspectRatio:false,
       animation:chartAnim,
       plugins:{legend:{display:false}},
       scales:{
@@ -1247,7 +1278,6 @@ function drawDailyChart(data){
 
 function drawShindoChart(data){
   destroyChart('shindo');
-  // 진도 순서: 1→7 (낮은 것부터)
   const labels=['1','2','3','4','5약','5강','6약','6강','7'];
   const bins=Object.fromEntries(labels.map(k=>[k,0]));
   data.forEach(q=>{
@@ -1255,7 +1285,8 @@ function drawShindoChart(data){
     if(sc){ const s=SM[String(sc)]; if(s&&bins[s]!==undefined) bins[s]++; }
   });
   const vals=labels.map(k=>bins[k]);
-  const colors=['#0c447c','#185fa5','#27500a','#633806','#854f0b','#993c1d','#a32d2d','#791f1f','#ff2d2d'];
+  // 기상청 공식 진도 색상
+  const colors=labels.map(k=>JMA_SHINDO_COLORS[k]||'#333');
   charts['shindo']=new Chart(document.getElementById('chart-shindo'),{
     type:'doughnut',
     data:{
@@ -1263,8 +1294,9 @@ function drawShindoChart(data){
       datasets:[{data:vals,backgroundColor:colors,borderWidth:1,borderColor:'rgba(0,0,0,0.3)',hoverOffset:6}]
     },
     options:{
+      maintainAspectRatio:false,
       animation:chartAnim,
-      cutout:'55%',
+      cutout:'52%',
       plugins:{
         legend:{
           position:'right',
@@ -1272,7 +1304,7 @@ function drawShindoChart(data){
             color:chartDefaults.color,
             font:{family:chartDefaults.font,size:12},
             boxWidth:12,padding:8,
-            filter:(item)=>vals[item.index]>0  // 0건인 진도는 범례 숨김
+            filter:(item)=>vals[item.index]>0
           }
         },
         tooltip:{callbacks:{label:ctx=>`진도${ctx.label}: ${ctx.raw}건`}}
@@ -1614,18 +1646,15 @@ async function initDashMap(){
     const W=el.clientWidth||700, H=el.clientHeight||560;
     const tp=await d3.json('https://cdn.jsdelivr.net/npm/datamaps@0.5.10/src/js/data/jpn.topo.json');
     dashSvg=d3.select('#dash-map').attr('viewBox',`0 0 ${W} ${H}`);
-    dashMapW=W; dashMapH=H;
-    dashProj=d3.geoMercator().center([133.5,36.5]).scale(W*2.2).translate([W*0.49,H*0.42]);
+    dashProj=d3.geoMercator().center([136.0,36.5]).scale(W*2.4).translate([W*0.45,H*0.52]);
     dashSvg.selectAll('path.land')
       .data(topojson.feature(tp,tp.objects.jpn).features).join('path')
       .attr('class','land').attr('d',d3.geoPath(dashProj))
       .attr('fill','#0d1a24').attr('stroke','rgba(0,180,255,0.25)').attr('stroke-width','0.7');
     dashMapOk=true;
     // 지도 배경 클릭 시 줌 복귀
-    // click → dblclick, 조건 제거
-    dashSvg.on('dblclick', function(event){
-      event.preventDefault();
-      resetZoom();
+    dashSvg.on('click', function(event){
+      if(event.target.tagName === 'path') resetZoom();
     });
     renderDashMap(mapData);
     drawHistLayer();
@@ -1709,54 +1738,30 @@ function zoomToItem(i){
   const q=_mapItems[i];
   if(!q||!dashProj)return;
   const h=q.earthquake.hypocenter;
-  if(!h||!h.longitude||!h.latitude||h.longitude===0)return;
-  const proj=dashProj([h.longitude,h.latitude]);
-  if(!proj)return;
-  const [x,y]=proj;
+  const [x,y]=dashProj([h.longitude,h.latitude]);
   zoomToEpicenter(q,h,x,y);
-  }
+}
 
+let zoomed=false;
 function zoomToEpicenter(q,h,x,y){
   if(!dashSvg||!dashProj)return;
-  const W=dashMapW, H=dashMapH;
+  const el=document.getElementById('dash-map');
+  const W=el.clientWidth||700, H=el.clientHeight||560;
   const scale=3.5;
   const vx=x-W/scale/2, vy=y-H/scale/2;
   const vw=W/scale, vh=H/scale;
-  const svgEl=document.getElementById('dash-map');
-  if(svgEl) svgEl.setAttribute('viewBox',`${vx} ${vy} ${vw} ${vh}`);
-  currentViewBox={vx,vy,vw,vh};
-  applyCanvasTransform();
+  dashSvg.transition().duration(700).attr('viewBox',`${vx} ${vy} ${vw} ${vh}`);
   zoomed=true;
 }
-  
-let zoomed=false;
-let currentViewBox=null;
-let dashMapW=700, dashMapH=560;  // 전역 선언
 
-function applyCanvasTransform(){
-  const canvas=document.getElementById('radar-canvas');
-  if(!canvas) return;
-  if(!currentViewBox){ canvas.style.transform=''; canvas.style.transformOrigin=''; return; }
-  const {vx,vy,vw,vh}=currentViewBox;
-  const sx=dashMapW/vw, sy=dashMapH/vh;
-  canvas.style.transformOrigin='0 0';
-  canvas.style.transform=`translate(${-vx*sx}px,${-vy*sy}px) scale(${sx},${sy})`;
-}
-
-// zoomToEpicenter에 추가:
-currentViewBox={vx,vy,vw,vh};
-setTimeout(applyCanvasTransform, 750);
-
-// resetZoom 수정:
 function resetZoom(){
-  if(!dashSvg)return;
-  const svgEl=document.getElementById('dash-map');
-  if(svgEl) svgEl.setAttribute('viewBox',`0 0 ${dashMapW} ${dashMapH}`);
-  currentViewBox=null;
-  applyCanvasTransform();
+  if(!zoomed||!dashSvg)return;
+  const el=document.getElementById('dash-map');
+  const W=el.clientWidth||700, H=el.clientHeight||560;
+  dashSvg.transition().duration(500).attr('viewBox',`0 0 ${W} ${H}`);
   zoomed=false;
 }
-  
+
 const ssMap=document.createElement('style');
 ssMap.textContent='@keyframes dashRing{0%{r:9;opacity:.8;stroke-width:2}100%{r:28;opacity:0;stroke-width:.5}}';
 document.head.appendChild(ssMap);
