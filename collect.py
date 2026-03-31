@@ -4,12 +4,19 @@
 소스: https://www.jma.go.jp/bosai/quake/data/list.json (기상청 공식 로우 데이터)
       각 지진 상세 JSON으로 위도·경도·진도 보완
 실행: GitHub Actions 매시간 자동 실행
-저장: data/earthquakes.json (누적, 중복 제거, 최근 365일 보존)
 
-[2026-03-31 개선]
-- cod 필드에서 lat/lon/dep 직접 파싱 → 상세 JSON 요청 횟수 대폭 감소
-- dep(심도) 필드 추출 추가
-- 소급 보완 대상: 좌표 없는 기존 데이터 (50건 → 100건으로 확대)
+[저장 구조]
+data/
+├── earthquakes.json        ← 최근 30일 (대시보드용, 항상 작고 빠름)
+└── history/
+    ├── index.json          ← 사용 가능한 월 목록 + 건수
+    ├── 2026-03.json        ← 월별 아카이브 (완성된 달은 불변)
+    ├── 2026-02.json
+    └── ...
+
+[변경 이력]
+2026-03-31 v1: cod 필드 파싱으로 lat/lon/dep 직접 추출, 소급 보완 100건
+2026-03-31 v2: 월별 아카이브 분리 (earthquakes.json = 최근 30일만)
 """
 
 import json
@@ -20,15 +27,17 @@ import requests
 from datetime import datetime, timezone, timedelta
 
 DATA_FILE   = "data/earthquakes.json"
+HISTORY_DIR = "data/history"
 LIST_URL    = "https://www.jma.go.jp/bosai/quake/data/list.json"
 DETAIL_BASE = "https://www.jma.go.jp/bosai/quake/data/"
-KEEP_DAYS   = 365
+KEEP_DAYS   = 30    # earthquakes.json 보존 기간 (일) — 이전 데이터는 아카이브로 이동
 RATE_WAIT   = 0.5   # 상세 JSON 요청 간격 (초)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (earthquake-monitor; github-actions)",
     "Referer":    "https://www.jma.go.jp/bosai/quake/",
 }
+
 
 # ──────────────────────────────────────────
 # cod 필드 파싱: "+37.2+136.7-10000/" → lat, lon, dep
@@ -41,7 +50,6 @@ def parse_cod(cod_str: str) -> dict:
     """
     if not cod_str:
         return {}
-    # 부호 포함 숫자 3개 연속 매칭
     m = re.match(r'([+-][\d.]+)([+-][\d.]+)([+-][\d]+)', cod_str)
     if not m:
         return {}
@@ -49,7 +57,6 @@ def parse_cod(cod_str: str) -> dict:
         "lat": m.group(1).lstrip("+"),
         "lon": m.group(2).lstrip("+"),
     }
-    # 심도: 미터 → km 변환 (음수이므로 절댓값)
     try:
         dep_m = abs(int(float(m.group(3))))
         if dep_m > 0:
@@ -80,7 +87,6 @@ def fetch_detail(json_filename: str) -> dict:
         d = r.json()
         result = {}
 
-        # 진원 정보
         eq    = d.get("earthquake", {})
         hypo  = eq.get("hypocenter", {})
         coord = hypo.get("coordinate")
@@ -95,11 +101,9 @@ def fetch_detail(json_filename: str) -> dict:
                 parsed = parse_cod(coord)
                 result.update(parsed)
 
-        # 심도 (hypocenter.depth 별도 제공하는 경우)
         if not result.get("dep") and hypo.get("depth") is not None:
             result["dep"] = str(abs(int(hypo["depth"])))
 
-        # 최대진도
         SCALE_MAP = {
             10: "1", 20: "2", 30: "3", 40: "4",
             45: "5弱", 50: "5強", 55: "6弱", 60: "6強", 70: "7"
@@ -116,6 +120,7 @@ def fetch_detail(json_filename: str) -> dict:
 
 
 def load_existing() -> dict:
+    """earthquakes.json (최근 30일치) 로드"""
     if not os.path.exists(DATA_FILE):
         os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
         return {}
@@ -129,6 +134,7 @@ def load_existing() -> dict:
 
 
 def save(records: dict):
+    """최근 30일치를 earthquakes.json에 저장"""
     arr = sorted(records.values(), key=lambda x: x.get("at", ""), reverse=True)
     os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
     with open(DATA_FILE, "w", encoding="utf-8") as f:
@@ -136,23 +142,7 @@ def save(records: dict):
     print(f"[save] {len(arr)}건 → {DATA_FILE}")
 
 
-def prune_old(records: dict) -> dict:
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=KEEP_DAYS)).strftime("%Y-%m-%d")
-    pruned = {eid: item for eid, item in records.items()
-              if item.get("at", "")[:10] >= cutoff}
-    removed = len(records) - len(pruned)
-    if removed:
-        print(f"[prune] {removed}건 삭제 ({KEEP_DAYS}일 초과)")
-    return pruned
-
-
 def normalize(raw: dict) -> dict:
-    """
-    list.json 항목 정규화.
-    1순위: cod 필드에서 직접 파싱 (lat/lon/dep)
-    2순위: list.json 원본 값
-    상세 JSON 요청은 이후 main()에서 필요 시에만 수행.
-    """
     norm = {
         "eid":   raw.get("eid", ""),
         "at":    raw.get("at", ""),
@@ -165,27 +155,114 @@ def normalize(raw: dict) -> dict:
         "cod":   raw.get("cod", ""),
         "json":  raw.get("json", ""),
     }
-
-    # ★ cod 필드에서 lat/lon/dep 직접 보완
+    # cod 필드에서 lat/lon/dep 직접 보완
     if norm["cod"] and (not norm["lat"] or norm["lat"] == "0"):
         parsed = parse_cod(norm["cod"])
-        if parsed.get("lat"):
-            norm["lat"] = parsed["lat"]
-        if parsed.get("lon"):
-            norm["lon"] = parsed["lon"]
+        if parsed.get("lat"):  norm["lat"] = parsed["lat"]
+        if parsed.get("lon"):  norm["lon"] = parsed["lon"]
         if parsed.get("dep") and not norm["dep"]:
-            norm["dep"] = parsed["dep"]
-
+                               norm["dep"] = parsed["dep"]
     return norm
 
 
 def needs_detail(item: dict) -> bool:
-    """상세 JSON 요청이 필요한지 판단"""
     no_coord = not item.get("lat") or item["lat"] == "0"
     no_int   = not item.get("mxInt")
     return (no_coord or no_int) and bool(item.get("json"))
 
 
+# ──────────────────────────────────────────
+# 월별 아카이브
+# ──────────────────────────────────────────
+def archive_old(records: dict) -> dict:
+    """
+    30일 초과 데이터를 data/history/YYYY-MM.json으로 이동.
+    - 기존 아카이브가 있으면 병합 (중복 제거)
+    - index.json 업데이트
+    - 반환: 최근 30일치만 남긴 dict
+    """
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=KEEP_DAYS)).strftime("%Y-%m-%d")
+
+    recent, old = {}, {}
+    for eid, item in records.items():
+        (recent if item.get("at", "")[:10] >= cutoff else old)[eid] = item
+
+    if not old:
+        print("[archive] 이동할 데이터 없음")
+        return recent
+
+    # 월별 그룹화
+    by_month: dict[str, dict] = {}
+    for eid, item in old.items():
+        month = item.get("at", "")[:7]   # "YYYY-MM"
+        if len(month) == 7:
+            by_month.setdefault(month, {})[eid] = item
+
+    os.makedirs(HISTORY_DIR, exist_ok=True)
+
+    for month, items in sorted(by_month.items()):
+        hist_file = os.path.join(HISTORY_DIR, f"{month}.json")
+
+        # 기존 아카이브 로드 후 병합
+        existing_hist: dict = {}
+        if os.path.exists(hist_file):
+            try:
+                with open(hist_file, encoding="utf-8") as f:
+                    arr = json.load(f)
+                existing_hist = {x["eid"]: x for x in arr if "eid" in x}
+            except Exception as e:
+                print(f"[warn] 아카이브 읽기 실패 ({hist_file}): {e}")
+
+        merged = {**existing_hist, **items}   # 신규가 기존을 덮어씀
+        arr = sorted(merged.values(), key=lambda x: x.get("at", ""), reverse=True)
+
+        with open(hist_file, "w", encoding="utf-8") as f:
+            json.dump(arr, f, ensure_ascii=False, separators=(",", ":"))
+        print(f"[archive] {month}: {len(arr)}건 → {hist_file}")
+
+    update_index()
+    print(f"[archive] 총 {len(old)}건 → {len(by_month)}개 월 파일로 이동")
+    return recent
+
+
+def update_index():
+    """
+    data/history/index.json 업데이트.
+    대시보드나 외부 클라이언트가 사용 가능한 월 목록을 조회할 수 있음.
+    형식: {"updated": "...", "months": [{"month": "2026-02", "count": 1234}, ...]}
+    """
+    os.makedirs(HISTORY_DIR, exist_ok=True)
+    months = []
+    for fname in os.listdir(HISTORY_DIR):
+        if not fname.endswith(".json") or fname == "index.json":
+            continue
+        month = fname[:-5]   # "YYYY-MM"
+        if len(month) != 7 or month[4] != "-":
+            continue
+        fpath = os.path.join(HISTORY_DIR, fname)
+        try:
+            with open(fpath, encoding="utf-8") as f:
+                arr = json.load(f)
+            count = len(arr)
+        except Exception:
+            count = 0
+        months.append({"month": month, "count": count})
+
+    months.sort(key=lambda x: x["month"], reverse=True)
+
+    index = {
+        "updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "months":  months,
+    }
+    index_path = os.path.join(HISTORY_DIR, "index.json")
+    with open(index_path, "w", encoding="utf-8") as f:
+        json.dump(index, f, ensure_ascii=False, separators=(",", ":"))
+    print(f"[index] {len(months)}개 월 → {index_path}")
+
+
+# ──────────────────────────────────────────
+# 메인
+# ──────────────────────────────────────────
 def main():
     raw_list = fetch_list()
     existing = load_existing()
@@ -200,14 +277,13 @@ def main():
     for i, item in enumerate(new_items):
         norm = normalize(item)
 
-        # cod 파싱 후에도 좌표/진도가 없으면 상세 JSON 요청
         if needs_detail(norm):
             detail = fetch_detail(norm["json"])
-            if detail.get("lat"):   norm["lat"]   = detail["lat"]
-            if detail.get("lon"):   norm["lon"]   = detail["lon"]
+            if detail.get("lat"):              norm["lat"]   = detail["lat"]
+            if detail.get("lon"):              norm["lon"]   = detail["lon"]
             if detail.get("dep") and not norm["dep"]:
-                                    norm["dep"]   = detail["dep"]
-            if detail.get("mxInt"): norm["mxInt"] = detail["mxInt"]
+                                               norm["dep"]   = detail["dep"]
+            if detail.get("mxInt"):            norm["mxInt"] = detail["mxInt"]
             detail_count += 1
             time.sleep(RATE_WAIT)
 
@@ -217,9 +293,9 @@ def main():
             print(f"  {i+1}/{len(new_items)}건 처리중...")
 
     print(f"[merge] 기존 {before_count}건 + 신규 {len(new_items)}건 = {len(existing)}건")
-    print(f"[detail] 상세 JSON 요청: {detail_count}건 (cod 파싱으로 절약)")
+    print(f"[detail] 상세 JSON 요청: {detail_count}건")
 
-    # 기존 데이터 중 좌표 없는 것 소급 보완 (최근 100건)
+    # 좌표 없는 기존 데이터 소급 보완 (최근 100건)
     no_coord = [(eid, item) for eid, item in existing.items()
                 if (not item.get("lat") or item["lat"] == "0") and item.get("json")]
     no_coord.sort(key=lambda x: x[1].get("at", ""), reverse=True)
@@ -228,7 +304,6 @@ def main():
         target = no_coord[:100]
         print(f"[補完] 좌표 없는 기존 데이터 {len(target)}건 소급 보완 시도")
         for eid, item in target:
-            # 먼저 cod 파싱으로 시도
             if item.get("cod"):
                 parsed = parse_cod(item["cod"])
                 if parsed.get("lat"):
@@ -236,9 +311,7 @@ def main():
                     item["lon"] = parsed["lon"]
                     if parsed.get("dep") and not item.get("dep"):
                         item["dep"] = parsed["dep"]
-                    continue  # 파싱 성공 → 상세 JSON 불필요
-
-            # cod 파싱 실패 시 상세 JSON 요청
+                    continue
             detail = fetch_detail(item["json"])
             if detail.get("lat"):  item["lat"]   = detail["lat"]
             if detail.get("lon"):  item["lon"]   = detail["lon"]
@@ -248,7 +321,8 @@ def main():
                                    item["mxInt"] = detail["mxInt"]
             time.sleep(RATE_WAIT)
 
-    existing = prune_old(existing)
+    # 30일 초과 데이터 → 월별 아카이브로 이동, 최근 30일만 저장
+    existing = archive_old(existing)
     save(existing)
     print("[done] 완료")
 
