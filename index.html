@@ -1334,10 +1334,10 @@ function haversineKm(lat1,lon1,lat2,lon2){
 
 async function loadPlants(){
   try{
-    const d=await fetch('https://raw.githubusercontent.com/neulbo00/JAPAN-earthquake-monitor/main/plants.json').then(r=>r.json());
-    plantsData=Array.isArray(d)?d.filter(p=>p.type==='nuclear'||p.lat):d;
-    // nuclear 타입만 필터
-    plantsData=plantsData.filter(p=>p.type&&p.type.toLowerCase().includes('nuclear'));
+    const d=await fetch('https://raw.githubusercontent.com/neulbo00/JAPAN-earthquake-monitor/main/data/plants.json').then(r=>r.json());
+    if(Array.isArray(d)){plantsData=d;}
+    else if(d.nuclear&&Array.isArray(d.nuclear)){plantsData=d.nuclear;}
+    else{plantsData=[];}
     console.log('[Plants] 원전 데이터',plantsData.length,'개 로드');
   }catch(e){console.warn('[Plants]',e.message);}
 }
