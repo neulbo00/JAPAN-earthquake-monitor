@@ -1351,7 +1351,7 @@ function showNuclearInfo(lat,lon){
     name:p.name||p.nameKr||p.nameJp||'?',
     dist:Math.round(haversineKm(lat,lon,p.lat,p.lon||p.lng))
   })).sort((a,b)=>a.dist-b.dist).slice(0,3);
-  nl.innerHTML=sorted.map(p=><span class="ni-item"><span class="ni-dist">km</span></span>).join('');
+  nl.innerHTML=sorted.map(p=>`<span class="ni-item">${p.name}<span class="ni-dist">${p.dist}km</span></span>`).join('');
   ni.classList.add('active');
   if(nuclearHideTimer)clearTimeout(nuclearHideTimer);
   nuclearHideTimer=setTimeout(()=>{ni.classList.remove('active');ni.classList.remove('pos-top');},3600000);
