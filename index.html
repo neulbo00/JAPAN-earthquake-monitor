@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -51,6 +51,9 @@ body::before{content:'';position:fixed;inset:0;
 .ticker-inner{display:flex;align-items:center;height:100%;white-space:nowrap;will-change:transform;}
 .ticker-item{font-family:var(--font-m);font-size:18px;color:var(--text);padding:0 40px;border-right:1px solid var(--border);flex-shrink:0;}
 .ticker-item span{color:var(--accent2);}
+.ticker-item.news{color:var(--text);border-right-color:rgba(0,255,204,0.22);}
+.ticker-item.news .ntag{color:var(--accent2);font-size:13px;letter-spacing:2px;margin-right:6px;opacity:.85;}
+.ticker-item.news em{color:#fff;font-style:normal;font-weight:700;}
 
 /* ══ 좌측 패널 ══ */
 .panel-left{
@@ -223,6 +226,14 @@ body::before{content:'';position:fixed;inset:0;
 /* TTS 자막 */
 .tts-subtitle{display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:1001;text-align:center;pointer-events:none;background:rgba(0,0,0,0.85);border:2px solid var(--accent);border-radius:8px;padding:16px 32px;min-width:700px;max-width:1500px;backdrop-filter:blur(6px);}
 .tts-subtitle.active{display:block;animation:subIn .3s ease-out;}
+.tts-subtitle.pos-top{bottom:auto;top:80px;}
+.nuclear-info{display:none;position:fixed;bottom:220px;left:50%;transform:translateX(-50%);z-index:1000;pointer-events:none;background:rgba(0,0,0,0.82);border:1px solid rgba(255,140,0,0.55);border-radius:6px;padding:10px 28px;text-align:center;backdrop-filter:blur(4px);}
+.nuclear-info.active{display:block;animation:subIn .3s ease-out;}
+.nuclear-info.pos-top{bottom:auto;top:220px;}
+.ni-title{font-family:var(--font-m);font-size:13px;color:var(--warn);letter-spacing:3px;margin-bottom:6px;}
+.ni-list{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;}
+.ni-item{font-family:var(--font-m);font-size:16px;color:#fff;}
+.ni-item .ni-dist{color:var(--warn);font-size:18px;font-weight:700;margin-left:5px;}
 @keyframes subIn{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 .sub-kr{font-family:var(--font-b);font-size:32px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:5px;}
 .sub-jp{font-family:var(--font-b);font-size:24px;color:rgba(255,255,255,0.78);line-height:1.4;}
@@ -248,6 +259,10 @@ body::before{content:'';position:fixed;inset:0;
   <div class="sub-kr" id="sub-kr">—</div>
   <div class="sub-jp" id="sub-jp">—</div>
   <div class="sub-count" id="sub-count"></div>
+</div>
+<div class="nuclear-info" id="nuclear-info">
+  <div class="ni-title">&#9888; 인근 원전까지 거리</div>
+  <div class="ni-list" id="ni-list"></div>
 </div>
 
 <div class="layout">
@@ -716,6 +731,28 @@ function drawSeismo(qs){
     w.appendChild(b);
   });
 }
+let quakeTickerItems=[];  // 지진 전용 보관
+let newsItems=[];         // 뉴스 전용 보관
+
+// ─── 뉴스 티커 ─────────────────────────────────────────────────
+async function fetchQuakeNews(){
+  try{
+    const ctrl=new AbortController();
+    const tid=setTimeout(()=>ctrl.abort(),8000);
+    const r=await fetch('http://localhost:8765/quake-news',{signal:ctrl.signal});
+    clearTimeout(tid);
+    const d=await r.json();
+    if(d.ok&&Array.isArray(d.items)&&d.items.length>0){
+      newsItems=d.items.map(n=>{
+        const src=n.source?' ['+n.source+']':'';
+        return '<span class="ticker-item news"><span class="ntag">NEWS</span><em>'+n.title+'</em> &#9658; '+n.summary+src+'</span>';
+      });
+      tickerItems=[...quakeTickerItems,...newsItems];
+      initTicker();
+      console.log('[QuakeNews]',newsItems.length,'건 반영');
+    }
+  }catch(e){console.warn('[QuakeNews]',e.message);}
+}
 function buildTicker(qs){
   const items=qs.slice(0,10).map(q=>{
     const h=q.earthquake?.hypocenter;if(!h)return null;
@@ -756,7 +793,12 @@ async function drawPip(lat,lon,locName){
 
 let prevId=null;
 let regionAlertTimer=null;
-let tickerItems=[];       // 티커 아이템 (끊김 없는 연속 스크롤용)
+let subtitleHideTimer=null;  // 자막 1시간 타이머
+let nuclearHideTimer=null;  // 원전 정보 1시간 타이머
+let plantsData=[];           // plants.json 데이터
+let tickerItems=[];       // 실제 렌더링 배열 (지진+뉴스 합산)
+let quakeTickerItems=[];  // 지진 전용 보관
+let newsItems=[];         // 뉴스 전용 보관
 let tickerPos=0;          // 현재 스크롤 위치
 let tickerRAF=null;       // requestAnimationFrame ID
 let tickerSpeed=0.5;      // px/frame
@@ -781,6 +823,28 @@ function initTicker(){
   tickerRAF=requestAnimationFrame(animate);
 }
 
+let quakeTickerItems=[];  // 지진 전용 보관
+let newsItems=[];         // 뉴스 전용 보관
+
+// ─── 뉴스 티커 ─────────────────────────────────────────────────
+async function fetchQuakeNews(){
+  try{
+    const ctrl=new AbortController();
+    const tid=setTimeout(()=>ctrl.abort(),8000);
+    const r=await fetch('http://localhost:8765/quake-news',{signal:ctrl.signal});
+    clearTimeout(tid);
+    const d=await r.json();
+    if(d.ok&&Array.isArray(d.items)&&d.items.length>0){
+      newsItems=d.items.map(n=>{
+        const src=n.source?' ['+n.source+']':'';
+        return '<span class="ticker-item news"><span class="ntag">NEWS</span><em>'+n.title+'</em> &#9658; '+n.summary+src+'</span>';
+      });
+      tickerItems=[...quakeTickerItems,...newsItems];
+      initTicker();
+      console.log('[QuakeNews]',newsItems.length,'건 반영');
+    }
+  }catch(e){console.warn('[QuakeNews]',e.message);}
+}
 function buildTicker(qs){
   const items=qs.slice(0,20).map(q=>{
     const h=q.earthquake?.hypocenter;if(!h)return null;
@@ -1018,6 +1082,8 @@ async function loadData(){
       if(regionAlertTimer)clearTimeout(regionAlertTimer);
       regionAlertTimer=setTimeout(()=>rp.classList.remove('alert-region'),3600000);
       if(audioCtx)triggerAlert(magNum>=6.5?'critical':'warning',locKr(h?.name||'불명'),mag,sc,jst(data[0].time));
+      positionSubtitle(h?.latitude);
+      if(h?.latitude&&h?.longitude)showNuclearInfo(h.latitude,h.longitude);
     } else if(isNewEq&&isTTS){
       if(audioCtx&&window.speechSynthesis){
         const krText=`지진 발생. ${jst(data[0].time)}. ${locKr(h?.name||'불명')}, 진도 ${sc}, 규모 ${mag}.`;
@@ -1028,10 +1094,11 @@ async function loadData(){
           document.getElementById('sub-jp').textContent=jpText;
           document.getElementById('sub-count').textContent='';
           sub.classList.add('active');
+          positionSubtitle(h?.latitude);
           const u=new SpeechSynthesisUtterance(krText);u.lang='ko-KR';u.rate=0.9;
           u.onend=()=>{
             const u2=new SpeechSynthesisUtterance(jpText);u2.lang='ja-JP';u2.rate=0.9;
-            u2.onend=()=>setTimeout(()=>sub.classList.remove('active'),1000);
+            u2.onend=()=>{if(subtitleHideTimer)clearTimeout(subtitleHideTimer);subtitleHideTimer=setTimeout(()=>{sub.classList.remove('active');sub.classList.remove('pos-top');},3600000);};
             window.speechSynthesis.speak(u2);
           };
           window.speechSynthesis.speak(u);
@@ -1050,6 +1117,9 @@ async function loadData(){
   await checkTsunami();
   setInterval(loadData,30000);       // 30초 갱신
   setInterval(checkTsunami,120000);
+  loadPlants();
+  fetchQuakeNews();
+  setInterval(fetchQuakeNews,1800000); // 30분마다 뉴스 갱신
 })();
 const ss=document.createElement('style');
 ss.textContent='@keyframes epiRing{0%{r:9;opacity:.8;stroke-width:2}100%{r:30;opacity:0;stroke-width:.5}}';
@@ -1226,7 +1296,11 @@ function speakAndSubtitle(krText,jpText,level){
   if(!sub)return;
   let repeat=0;
   function speak(){
-    if(repeat>=3){sub.classList.remove('active');return;}
+    if(repeat>=3){
+      if(subtitleHideTimer)clearTimeout(subtitleHideTimer);
+      subtitleHideTimer=setTimeout(()=>{sub.classList.remove('active');sub.classList.remove('pos-top');},3600000);
+      return;
+    }
     repeat++;
     subKr.textContent=krText;subJp.textContent=jpText;
     subCnt.textContent=`${repeat} / 3`;
@@ -1240,6 +1314,53 @@ function speakAndSubtitle(krText,jpText,level){
   setTimeout(speak,ttsDelay);
 }
 
+// ─── 자막 위치 조정 (진원지 겹침 방지) ─────────────────────────
+function positionSubtitle(lat){
+  // lat < 34 = 일본 남부(큐슈/시코쿠) → 화면 하단 → 자막 상단으로
+  const el=document.getElementById('tts-subtitle');
+  const ni=document.getElementById('nuclear-info');
+  if(!el)return;
+  if(lat && lat < 34){
+    el.classList.add('pos-top');
+    if(ni)ni.classList.add('pos-top');
+  }else{
+    el.classList.remove('pos-top');
+    if(ni)ni.classList.remove('pos-top');
+  }
+}
+
+// ─── 원전 거리 계산 ─────────────────────────────────────────────
+function haversineKm(lat1,lon1,lat2,lon2){
+  const R=6371,toR=Math.PI/180;
+  const dLat=(lat2-lat1)*toR,dLon=(lon2-lon1)*toR;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*toR)*Math.cos(lat2*toR)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+async function loadPlants(){
+  try{
+    const d=await fetch('https://raw.githubusercontent.com/neulbo00/JAPAN-earthquake-monitor/main/plants.json').then(r=>r.json());
+    plantsData=Array.isArray(d)?d.filter(p=>p.type==='nuclear'||p.lat):d;
+    // nuclear 타입만 필터
+    plantsData=plantsData.filter(p=>p.type&&p.type.toLowerCase().includes('nuclear'));
+    console.log('[Plants] 원전 데이터',plantsData.length,'개 로드');
+  }catch(e){console.warn('[Plants]',e.message);}
+}
+
+function showNuclearInfo(lat,lon){
+  const ni=document.getElementById('nuclear-info');
+  const nl=document.getElementById('ni-list');
+  if(!ni||!nl||plantsData.length===0||!lat||!lon)return;
+  // 거리 계산 후 가까운 3개
+  const sorted=plantsData.map(p=>({
+    name:p.name||p.nameKr||p.nameJp||'?',
+    dist:Math.round(haversineKm(lat,lon,p.lat,p.lon||p.lng))
+  })).sort((a,b)=>a.dist-b.dist).slice(0,3);
+  nl.innerHTML=sorted.map(p=><span class="ni-item"><span class="ni-dist">km</span></span>).join('');
+  ni.classList.add('active');
+  if(nuclearHideTimer)clearTimeout(nuclearHideTimer);
+  nuclearHideTimer=setTimeout(()=>{ni.classList.remove('active');ni.classList.remove('pos-top');},3600000);
+}
 function triggerAlert(level,locName,mag,sc,timeStr){
   let krText,jpText;
   if(level==='critical'){
