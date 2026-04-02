@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -734,6 +734,36 @@ function drawSeismo(qs){
 let quakeTickerItems=[];  // 지진 전용 보관
 let newsItems=[];         // 뉴스 전용 보관
 
+// ─── 방송 설정 (Flask 릴레이 연동) ─────────────────────────────────
+let BCAST={ttsShindo:3,alertShindo:4,alertMag:6.5,sound:true,bgmVol:25,ttsRepeat:3,tsunamiInterval:120,koreanLoc:true};
+const _ALL_SHINDO=['1','2','3','4','5약','5강','6약','6강','7'];
+const _SHINDO_IDX={1:0,2:1,3:2,4:3,5:4,6:6,7:8};
+function buildScaleSet(minVal){
+  const idx=_SHINDO_IDX[Math.max(1,Math.min(7,parseInt(minVal)))]||0;
+  const s={};_ALL_SHINDO.slice(idx).forEach(k=>s[k]=true);return s;
+}
+async function fetchBroadcastSettings(){
+  try{
+    const ctrl=new AbortController();
+    setTimeout(()=>ctrl.abort(),4000);
+    const r=await fetch('http://localhost:8765/quake-settings',{signal:ctrl.signal});
+    const d=await r.json();
+    if(d.ok&&d.settings){
+      const s=d.settings;
+      BCAST.ttsShindo   = parseInt(s.ttsShindo)   ||3;
+      BCAST.alertShindo = parseInt(s.alertShindo) ||4;
+      BCAST.alertMag    = parseFloat(s.alertMag)  ||6.5;
+      BCAST.sound       = s.sound!==false;
+      BCAST.bgmVol      = parseInt(s.bgmVol)      ||25;
+      BCAST.ttsRepeat   = parseInt(s.ttsRepeat)   ||3;
+      BCAST.tsunamiInterval = parseInt(s.tsunamiInterval)||120;
+      BCAST.koreanLoc   = s.koreanLoc!==false;
+      if(window.bgGainNode) window.bgGainNode.gain.setValueAtTime(BCAST.bgmVol/100,window.bgGainNode.context.currentTime);
+      console.log('[BcastSettings] 로드 완료',BCAST);
+    }
+  }catch(e){ console.log('[BcastSettings] 서버 미연결, 기본값 사용'); }
+}
+
 // ─── 뉴스 티커 ─────────────────────────────────────────────────
 async function fetchQuakeNews(){
   try{
@@ -941,12 +971,12 @@ async function loadData(){
     const sc=eq?.maxScale?(SM[String(eq.maxScale)]||'—'):'—';
     const magNum=parseFloat(mag);
 
-    // 경보 판정
-    const ALERT_SCALES={'5약':true,'5강':true,'6약':true,'6강':true,'7':true};
-    const WARN_SCALES={'4':true,'5약':true,'5강':true,'6약':true,'6강':true,'7':true};
-    const TTS_SCALES={'3':true,'4':true,'5약':true,'5강':true,'6약':true,'6강':true,'7':true};
-    const isAlert=magNum>=6.5||ALERT_SCALES[sc];
-    const isTTS=TTS_SCALES[sc]||magNum>=3;
+    // 경보 판정 (BCAST 설정 기반)
+    const ALERT_SCALES=buildScaleSet(BCAST.alertShindo);
+    const WARN_SCALES=buildScaleSet(Math.max(1,BCAST.alertShindo-1));
+    const TTS_SCALES=buildScaleSet(BCAST.ttsShindo);
+    const isAlert=magNum>=BCAST.alertMag||ALERT_SCALES[sc];
+    const isTTS=TTS_SCALES[sc]||magNum>=BCAST.ttsShindo;
 
     // 기간별 지진 발생 건수 (API는 최근 20건만 → 더 많이 가져와야 함)
     // 기간별 건수 표시 (비동기 병렬 처리)
@@ -1107,11 +1137,13 @@ async function loadData(){
   }catch(e){console.error('오류',e);}
 }
 (async()=>{
+  await fetchBroadcastSettings();    // 방송 설정 먼저 로드
   await initMap();
   await loadData();
   await checkTsunami();
   setInterval(loadData,30000);       // 30초 갱신
-  setInterval(checkTsunami,120000);
+  setInterval(checkTsunami,BCAST.tsunamiInterval*1000);
+  setInterval(fetchBroadcastSettings,300000); // 5분마다 설정 재로드
   loadPlants();
   fetchQuakeNews();
   setInterval(fetchQuakeNews,1800000); // 30분마다 뉴스 갱신
@@ -1133,7 +1165,7 @@ function initAudio(){
 function startBgMusic(){
   if(!audioCtx||bgMusicNode)return;
   const masterGain=audioCtx.createGain();
-  masterGain.gain.setValueAtTime(0.25,audioCtx.currentTime);
+  masterGain.gain.setValueAtTime(BCAST.bgmVol/100,audioCtx.currentTime);
   masterGain.connect(audioCtx.destination);
   bgGainNode=masterGain;
 
@@ -1291,14 +1323,14 @@ function speakAndSubtitle(krText,jpText,level){
   if(!sub)return;
   let repeat=0;
   function speak(){
-    if(repeat>=3){
+    if(repeat>=BCAST.ttsRepeat){
       if(subtitleHideTimer)clearTimeout(subtitleHideTimer);
       subtitleHideTimer=setTimeout(()=>{sub.classList.remove('active');sub.classList.remove('pos-top');},3600000);
       return;
     }
     repeat++;
     subKr.textContent=krText;subJp.textContent=jpText;
-    subCnt.textContent=`${repeat} / 3`;
+    subCnt.textContent=`${repeat} / ${BCAST.ttsRepeat}`;
     sub.classList.add('active');
     const u=new SpeechSynthesisUtterance(krText);u.lang='ko-KR';u.rate=0.88;
     const u2=new SpeechSynthesisUtterance(jpText);u2.lang='ja-JP';u2.rate=0.88;
