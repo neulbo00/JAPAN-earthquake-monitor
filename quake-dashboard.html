@@ -433,6 +433,7 @@ input[type="range"]::-webkit-slider-thumb {
             <button onclick="toggleLayer('thermal')"  id="btn-thermal"  class="layer-btn">화력발전소</button>
             <button onclick="toggleLayer('nankai')"   id="btn-nankai"   class="layer-btn active">난카이 트로프</button>
             <button onclick="toggleLayer('radar')"    id="btn-radar"    class="layer-btn">🌧 강수레이더</button>
+            <button onclick="toggleLayer('volcano')"  id="btn-volcano"  class="layer-btn">🌋 화산경보</button>
           </div>
         </div>
         <div style="flex:1;position:relative;min-height:0;">
@@ -1492,7 +1493,7 @@ function refreshAll(){
 
 // ── 초기화 ──
 // ── 레이어 상태 ──
-const layerState = { quake:true, hist:true, nuclear:false, thermal:false, nankai:true, radar:false };
+const layerState = { quake:true, hist:true, nuclear:false, thermal:false, nankai:true, radar:false, volcano:true };
 let plantsData = null;
 let radarTimer = null;
 
@@ -1523,6 +1524,7 @@ function refreshLayers(){
   dashSvg.selectAll('.layer-nuclear').style('display', layerState.nuclear ? null : 'none');
   dashSvg.selectAll('.layer-thermal').style('display', layerState.thermal ? null : 'none');
   dashSvg.selectAll('.layer-nankai').style('display', layerState.nankai ? null : 'none');
+  dashSvg.selectAll('.layer-volcano').style('display', layerState.volcano ? null : 'none');
 }
 
 // ── 난카이 트로프 레이어 ──
@@ -1756,6 +1758,113 @@ async function drawPlantLayer(){
   });
 }
 
+// ── 화산 경보 레이어 ──
+const VOLCANO_COORDS_D={
+  '硫黄島':{lat:24.75,lon:141.32},'三宅島':{lat:34.08,lon:139.53},
+  '伊豆大島':{lat:34.73,lon:139.39},'八丈島':{lat:33.14,lon:139.77},
+  '諏訪之瀬島':{lat:29.64,lon:129.72},'口永良部島':{lat:30.44,lon:130.22},
+  '薩摩硫黄島':{lat:30.79,lon:130.27},'桜島':{lat:31.59,lon:130.66},
+  '霧島山':{lat:31.93,lon:130.86},'阿蘇山':{lat:32.88,lon:131.10},
+  '雲仙岳':{lat:32.76,lon:130.30},'鶴見岳・伽藍岳':{lat:33.29,lon:131.43},
+  '九重山':{lat:33.10,lon:131.25},'由布岳':{lat:33.28,lon:131.39},
+  '普賢岳':{lat:32.76,lon:130.29},'多良間島近海':{lat:24.60,lon:124.70},
+  '草津白根山':{lat:36.62,lon:138.53},'浅間山':{lat:36.41,lon:138.52},
+  '富士山':{lat:35.36,lon:138.73},'伊豆東部火山群':{lat:34.92,lon:139.10},
+  '八ヶ岳':{lat:35.97,lon:138.37},'白山':{lat:36.15,lon:136.77},
+  '御嶽山':{lat:35.89,lon:137.48},'乗鞍岳':{lat:36.10,lon:137.55},
+  '焼岳':{lat:36.23,lon:137.59},'立山':{lat:36.57,lon:137.62},
+  '妙高山':{lat:36.90,lon:138.11},'新潟焼山':{lat:36.92,lon:138.04},
+  '磐梯山':{lat:37.60,lon:140.07},'那須岳':{lat:37.13,lon:139.97},
+  '吾妻山':{lat:37.73,lon:140.24},'蔵王山':{lat:38.13,lon:140.44},
+  '鳴子':{lat:38.73,lon:140.73},'栗駒山':{lat:38.97,lon:140.80},
+  '岩手山':{lat:39.85,lon:141.00},'秋田焼山':{lat:39.97,lon:140.75},
+  '八甲田山':{lat:40.65,lon:140.88},'岩木山':{lat:40.66,lon:140.30},
+  '恵山':{lat:41.80,lon:141.15},'駒ヶ岳':{lat:42.07,lon:140.68},
+  '有珠山':{lat:42.54,lon:140.84},'樽前山':{lat:42.69,lon:141.38},
+  '倶多楽':{lat:42.59,lon:141.20},'大雪山':{lat:43.66,lon:142.86},
+  '十勝岳':{lat:43.41,lon:142.69},'雌阿寒岳':{lat:43.38,lon:144.01},
+};
+const VOLCANO_KR_D={
+  '硫黄島':'이오지마','三宅島':'미야케지마','伊豆大島':'이즈오시마',
+  '八丈島':'하치조지마','諏訪之瀬島':'스와노세지마','口永良部島':'구치노에라부지마',
+  '薩摩硫黄島':'사쓰마이오지마','桜島':'사쿠라지마','霧島山':'기리시마산',
+  '阿蘇山':'아소산','雲仙岳':'운젠다케','普賢岳':'후겐다케',
+  '鶴見岳・伽藍岳':'쓰루미다케','九重山':'구주산','由布岳':'유후다케',
+  '多良間島近海':'다라마지마 근해','草津白根山':'구사쓰시라네산','浅間山':'아사마산',
+  '富士山':'후지산','伊豆東部火山群':'이즈 동부 화산군','八ヶ岳':'야쓰가타케',
+  '白山':'하쿠산','御嶽山':'온타케산','乗鞍岳':'노리쿠라다케',
+  '焼岳':'야케다케','立山':'다테야마','妙高山':'묘코산',
+  '新潟焼山':'니가타야케야마','磐梯山':'반다이산','那須岳':'나스다케',
+  '吾妻山':'아즈마야마','蔵王山':'자오산','鳴子':'나루코',
+  '栗駒山':'구리코마산','岩手山':'이와테산','秋田焼山':'아키타야케야마',
+  '八甲田山':'핫코다산','岩木山':'이와키산','恵山':'에산',
+  '駒ヶ岳':'고마가타케','有珠山':'우수잔','樽前山':'다루마에산',
+  '倶多楽':'구타라','大雪山':'다이세쓰산','十勝岳':'도카치다케',
+  '雌阿寒岳':'메아칸다케',
+};
+const VLV_COLORS_D={
+  1:{fill:'rgba(100,120,140,0.5)',stroke:'rgba(140,160,180,0.6)'},
+  2:{fill:'rgba(200,180,0,0.7)',  stroke:'rgba(255,220,0,0.9)'},
+  3:{fill:'rgba(255,100,0,0.8)',  stroke:'rgba(255,140,0,0.95)'},
+  4:{fill:'rgba(255,50,50,0.85)', stroke:'rgba(255,100,100,1)'},
+  5:{fill:'rgba(140,0,200,0.85)', stroke:'rgba(180,80,255,1)'},
+};
+const VLV_LEVEL_NAME={1:'평상',2:'화구주변규제',3:'입산규제',4:'피난준비',5:'피난'};
+
+async function drawVolcanoLayer(){
+  if(!dashMapOk||!dashSvg||!dashProj) return;
+  dashSvg.selectAll('.layer-volcano').remove();
+  const tooltip=document.getElementById('map-tooltip');
+  const svgEl=document.getElementById('dash-map');
+  try{
+    const data=await fetch('https://www.jma.go.jp/bosai/volcano/data/warning.json').then(r=>r.json());
+    const parsed={};
+    data.forEach(item=>{
+      const info=item.volcanoInfos?.find(v=>v.type?.includes('対象火山'));
+      if(!info) return;
+      info.items?.forEach(it=>{
+        const c=parseInt(it.code||'2');
+        let lv=c===1?1:c===2||c===22?2:c===3?3:c===4?4:c===5?5:2;
+        it.areas?.forEach(area=>{
+          const n=area.name;
+          if(!parsed[n]||lv>parsed[n].lv) parsed[n]={lv};
+        });
+      });
+    });
+    Object.entries(parsed).forEach(([name,{lv}])=>{
+      const coord=VOLCANO_COORDS_D[name];
+      if(!coord) return;
+      const [x,y]=dashProj([coord.lon,coord.lat]);
+      const col=VLV_COLORS_D[lv]||VLV_COLORS_D[2];
+      const r=lv>=4?8:lv>=3?7:lv>=2?6:4;
+      const h=r*1.8;
+      const nameKr=VOLCANO_KR_D[name]||name;
+      const g=dashSvg.append('g').attr('class','layer-volcano')
+        .style('cursor','pointer')
+        .style('display', layerState.volcano ? null : 'none');
+      // 삼각형 마커
+      g.append('polygon')
+        .attr('points',`${x},${y-h} ${x+r},${y+r*0.6} ${x-r},${y+r*0.6}`)
+        .attr('fill',col.fill).attr('stroke',col.stroke).attr('stroke-width',lv>=3?1.8:1.2);
+      // 레벨 2↑ 펄스 링
+      if(lv>=2){
+        g.append('circle').attr('cx',x).attr('cy',y-h*0.2).attr('r',r+3)
+          .attr('fill','none').attr('stroke',col.stroke).attr('stroke-width',0.8).attr('opacity',0.4);
+      }
+      // 툴팁
+      g.on('mouseover',function(){
+        tooltip.innerHTML=`<div style="color:#ff9f40;font-weight:700;font-size:13px;">🌋 ${nameKr}</div><div style="color:#aaa;font-size:12px;margin-top:2px;">${name}</div><div style="color:${col.stroke};font-size:12px;margin-top:3px;">경보 Lv.${lv} — ${VLV_LEVEL_NAME[lv]}</div>`;
+        const rect=svgEl.getBoundingClientRect();
+        const pr=svgEl.closest('.panel').getBoundingClientRect();
+        tooltip.style.left=(rect.left-pr.left+x+10)+'px';
+        tooltip.style.top=(rect.top-pr.top+y-20)+'px';
+        tooltip.style.display='block';
+      }).on('mouseout',function(){ tooltip.style.display='none'; });
+    });
+    console.log('[Volcano] 대시보드 마커',Object.keys(parsed).length,'개');
+  }catch(e){ console.warn('[Volcano]',e.message); }
+}
+
 // ── 대시보드 지도 ──
 let dashMapOk=false, dashSvg=null, dashProj=null;
 
@@ -1785,6 +1894,7 @@ async function initDashMap(){
     drawHistLayer();
     drawPlantLayer();
     drawNankaiLayer();
+    drawVolcanoLayer();
   }catch(e){console.error('지도 로드 실패',e);}
 }
 
