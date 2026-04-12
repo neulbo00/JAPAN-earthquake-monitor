@@ -1760,6 +1760,9 @@ async function drawPlantLayer(){
 
 // ── 화산 경보 레이어 ──
 const VOLCANO_COORDS_D={
+  // ── 해역 화산 ──
+  '西之島':{lat:27.24,lon:140.88},'福徳岡ノ場':{lat:21.93,lon:143.54},
+  'ベヨネース列岩':{lat:31.88,lon:139.92},'須美寿島':{lat:31.47,lon:140.05},
   '硫黄島':{lat:24.75,lon:141.32},'三宅島':{lat:34.08,lon:139.53},
   '伊豆大島':{lat:34.73,lon:139.39},'八丈島':{lat:33.14,lon:139.77},
   '諏訪之瀬島':{lat:29.64,lon:129.72},'口永良部島':{lat:30.44,lon:130.22},
@@ -1785,6 +1788,9 @@ const VOLCANO_COORDS_D={
   '十勝岳':{lat:43.41,lon:142.69},'雌阿寒岳':{lat:43.38,lon:144.01},
 };
 const VOLCANO_KR_D={
+  // ── 해역 화산 ──
+  '西之島':'니시노시마','福徳岡ノ場':'후쿠토쿠오카노바',
+  'ベヨネース列岩':'베요네스 열암','須美寿島':'스미스 섬',
   '硫黄島':'이오지마','三宅島':'미야케지마','伊豆大島':'이즈오시마',
   '八丈島':'하치조지마','諏訪之瀬島':'스와노세지마','口永良部島':'구치노에라부지마',
   '薩摩硫黄島':'사쓰마이오지마','桜島':'사쿠라지마','霧島山':'기리시마산',
@@ -1823,22 +1829,24 @@ async function drawVolcanoLayer(){
       const info=item.volcanoInfos?.find(v=>v.type?.includes('対象火山'));
       if(!info) return;
       info.items?.forEach(it=>{
-        const c=parseInt(it.code||'2');
-        let lv=c===1?1:c===2||c===22?2:c===3?3:c===4?4:c===5?5:2;
+        const c=parseInt(it.code||'12');
+        let lv=c===11||c===1?1:c===12||c===2||c===22?2:c===13||c===3||c===23?3:c===14||c===4?4:c===15||c===5||c===21?5:c===36?2:2;
         it.areas?.forEach(area=>{
           const n=area.name;
-          if(!parsed[n]||lv>parsed[n].lv) parsed[n]={lv};
+          const bn=n.replace(/（[^）]*）/g,'').trim(); // 괄호 제거
+          const key=VOLCANO_COORDS_D[n]?n:VOLCANO_COORDS_D[bn]?bn:n;
+          if(!parsed[key]||lv>parsed[key].lv) parsed[key]={lv, nameOrig:n};
         });
       });
     });
-    Object.entries(parsed).forEach(([name,{lv}])=>{
+    Object.entries(parsed).forEach(([name,{lv, nameOrig}])=>{
       const coord=VOLCANO_COORDS_D[name];
       if(!coord) return;
       const [x,y]=dashProj([coord.lon,coord.lat]);
       const col=VLV_COLORS_D[lv]||VLV_COLORS_D[2];
       const r=lv>=4?8:lv>=3?7:lv>=2?6:4;
       const h=r*1.8;
-      const nameKr=VOLCANO_KR_D[name]||name;
+      const nameKr=VOLCANO_KR_D[name]||VOLCANO_KR_D[nameOrig]||name;
       const g=dashSvg.append('g').attr('class','layer-volcano')
         .style('cursor','pointer')
         .style('display', layerState.volcano ? null : 'none');

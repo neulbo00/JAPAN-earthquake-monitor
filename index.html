@@ -1416,8 +1416,13 @@ function haversineKm(lat1,lon1,lat2,lon2){
 //  화산 경보 시스템
 // ══════════════════════════════════════════════
 
-// 주요 활화산 좌표 (JMA 경보 발령 대상 111개 중 대표 47개)
+// 주요 활화산 좌표 (JMA 경보 발령 대상 + 해역 화산 포함)
 const VOLCANO_COORDS={
+  // ── 해역 화산 (API 실제 발령 확인) ──
+  '西之島':{lat:27.24,lon:140.88},          // 니시노시마
+  '福徳岡ノ場':{lat:21.93,lon:143.54},      // 후쿠토쿠오카노바
+  'ベヨネース列岩':{lat:31.88,lon:139.92},  // 베요네스 열암
+  '須美寿島':{lat:31.47,lon:140.05},        // 스미스 섬
   '硫黄島':{lat:24.75,lon:141.32},'三宅島':{lat:34.08,lon:139.53},
   '伊豆大島':{lat:34.73,lon:139.39},'八丈島':{lat:33.14,lon:139.77},
   '諏訪之瀬島':{lat:29.64,lon:129.72},'口永良部島':{lat:30.44,lon:130.22},
@@ -1444,13 +1449,16 @@ const VOLCANO_COORDS={
 };
 
 // 경보 코드 → 레벨 숫자 변환
+// 실제 JMA API 코드: 11=Lv1, 12=Lv2, 13=Lv3, 14=Lv4, 15=Lv5
+// 특수코드: 21=분화경보(거주지), 22=화구주변위험, 23=입산위험, 36=해역경계
 function warningCodeToLevel(code){
   const c=parseInt(code);
-  if(c===01||c===1)return 1;   // 평상
-  if(c===02||c===2||c===22)return 2; // 화구 주변 규제
-  if(c===03||c===3)return 3;   // 입산 규제
-  if(c===04||c===4)return 4;   // 피난 준비
-  if(c===05||c===5)return 5;   // 피난
+  if(c===11||c===1) return 1;
+  if(c===12||c===2||c===22) return 2;
+  if(c===13||c===3||c===23) return 3;
+  if(c===14||c===4) return 4;
+  if(c===15||c===5||c===21) return 5;
+  if(c===36) return 2; // 주변 해역 경계 (Lv.2 상당)
   return 2; // 기본
 }
 
@@ -1462,6 +1470,11 @@ let volcanoData=[]; // {name, nameKr, level, lat, lon}
 
 // 화산명 일→한 변환 (47개 전체, 일본어 발음 기준 표기)
 const VOLCANO_KR={
+  // ── 해역 화산 ──
+  '西之島':'니시노시마',           // にしのしま
+  '福徳岡ノ場':'후쿠토쿠오카노바',// ふくとくおかのば
+  'ベヨネース列岩':'베요네스 열암',// べよねーすれつがん
+  '須美寿島':'스미스 섬',          // すみすじま
   // ── 규슈·난세이 제도 ──
   '硫黄島':'이오지마',             // いおうとう
   '三宅島':'미야케지마',           // みやけじま
@@ -1527,12 +1540,13 @@ async function loadVolcanoData(){
       info.items?.forEach(it=>{
         it.areas?.forEach(area=>{
           const name=area.name;
-          const level=warningCodeToLevel(it.code||'2');
-          const coord=VOLCANO_COORDS[name];
+          // 괄호 포함 이름 처리: 草津白根山（白根山（湯釜付近））→ 草津白根山
+          const baseName=name.replace(/（[^）]*）/g,'').trim();
+          const level=warningCodeToLevel(it.code||'12');
+          const coord=VOLCANO_COORDS[name]||VOLCANO_COORDS[baseName];
+          const nameKr=VOLCANO_KR[name]||VOLCANO_KR[baseName]||baseName;
           parsed.push({
-            name,
-            nameKr:VOLCANO_KR[name]||name,
-            level,
+            name, baseName, nameKr, level,
             lat:coord?.lat||null,
             lon:coord?.lon||null,
           });
