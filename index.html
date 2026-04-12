@@ -1454,11 +1454,10 @@ const VOLCANO_COORDS={
 function warningCodeToLevel(code){
   const c=parseInt(code);
   if(c===11||c===1) return 1;
-  if(c===12||c===2||c===22) return 2;
-  if(c===13||c===3||c===23) return 3;
+  if(c===12||c===2||c===22||c===36) return 2;
+  if(c===13||c===3||c===23||c===35) return 3; // 35=해역경보(Lv.3 상당)
   if(c===14||c===4) return 4;
   if(c===15||c===5||c===21) return 5;
-  if(c===36) return 2; // 주변 해역 경계 (Lv.2 상당)
   return 2; // 기본
 }
 
@@ -1540,8 +1539,11 @@ async function loadVolcanoData(){
       info.items?.forEach(it=>{
         it.areas?.forEach(area=>{
           const name=area.name;
-          // 괄호 포함 이름 처리: 草津白根山（白根山（湯釜付近））→ 草津白根山
-          const baseName=name.replace(/（[^）]*）/g,'').trim();
+          // 중첩 괄호 처리: 草津白根山（白根山（湯釜付近））→ 草津白根山
+          let baseName=name;
+          let _prev;
+          do { _prev=baseName; baseName=baseName.replace(/（[^（）]*）/g,''); } while(baseName!==_prev);
+          baseName=baseName.trim();
           const level=warningCodeToLevel(it.code||'12');
           const coord=VOLCANO_COORDS[name]||VOLCANO_COORDS[baseName];
           const nameKr=VOLCANO_KR[name]||VOLCANO_KR[baseName]||baseName;

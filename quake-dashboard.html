@@ -433,7 +433,7 @@ input[type="range"]::-webkit-slider-thumb {
             <button onclick="toggleLayer('thermal')"  id="btn-thermal"  class="layer-btn">화력발전소</button>
             <button onclick="toggleLayer('nankai')"   id="btn-nankai"   class="layer-btn active">난카이 트로프</button>
             <button onclick="toggleLayer('radar')"    id="btn-radar"    class="layer-btn">🌧 강수레이더</button>
-            <button onclick="toggleLayer('volcano')"  id="btn-volcano"  class="layer-btn">🌋 화산경보</button>
+            <button onclick="toggleLayer('volcano')"  id="btn-volcano"  class="layer-btn active">🌋 화산경보</button>
           </div>
         </div>
         <div style="flex:1;position:relative;min-height:0;">
@@ -1830,23 +1830,29 @@ async function drawVolcanoLayer(){
       if(!info) return;
       info.items?.forEach(it=>{
         const c=parseInt(it.code||'12');
-        let lv=c===11||c===1?1:c===12||c===2||c===22?2:c===13||c===3||c===23?3:c===14||c===4?4:c===15||c===5||c===21?5:c===36?2:2;
+        // 11=Lv1, 12=Lv2, 13=Lv3, 14=Lv4, 15=Lv5
+        // 22=火口周辺危険(Lv2), 23=入山危険(Lv3), 35=海域警報(Lv3), 36=海域警戒(Lv2)
+        let lv=c===11||c===1?1:c===12||c===2||c===22||c===36?2:c===13||c===3||c===23||c===35?3:c===14||c===4?4:c===15||c===5||c===21?5:2;
         it.areas?.forEach(area=>{
           const n=area.name;
-          const bn=n.replace(/（[^）]*）/g,'').trim(); // 괄호 제거
+          // 중첩 괄호 처리: 草津白根山（白根山（湯釜付近））→ 草津白根山
+          let bn=n;
+          let prev;
+          do { prev=bn; bn=bn.replace(/（[^（）]*）/g,''); } while(bn!==prev);
+          bn=bn.trim();
           const key=VOLCANO_COORDS_D[n]?n:VOLCANO_COORDS_D[bn]?bn:n;
-          if(!parsed[key]||lv>parsed[key].lv) parsed[key]={lv, nameOrig:n};
+          if(!parsed[key]||lv>parsed[key].lv) parsed[key]={lv, nameOrig:n, nameBase:bn};
         });
       });
     });
-    Object.entries(parsed).forEach(([name,{lv, nameOrig}])=>{
-      const coord=VOLCANO_COORDS_D[name];
+    Object.entries(parsed).forEach(([name,{lv, nameOrig, nameBase}])=>{
+      const coord=VOLCANO_COORDS_D[name]||VOLCANO_COORDS_D[nameBase];
       if(!coord) return;
       const [x,y]=dashProj([coord.lon,coord.lat]);
       const col=VLV_COLORS_D[lv]||VLV_COLORS_D[2];
       const r=lv>=4?8:lv>=3?7:lv>=2?6:4;
       const h=r*1.8;
-      const nameKr=VOLCANO_KR_D[name]||VOLCANO_KR_D[nameOrig]||name;
+      const nameKr=VOLCANO_KR_D[name]||VOLCANO_KR_D[nameBase]||VOLCANO_KR_D[nameOrig]||name;
       const g=dashSvg.append('g').attr('class','layer-volcano')
         .style('cursor','pointer')
         .style('display', layerState.volcano ? null : 'none');
@@ -1903,6 +1909,8 @@ async function initDashMap(){
     drawPlantLayer();
     drawNankaiLayer();
     drawVolcanoLayer();
+    // 화산 데이터 정기 갱신 (10분 주기)
+    setInterval(drawVolcanoLayer, 600000);
   }catch(e){console.error('지도 로드 실패',e);}
 }
 
