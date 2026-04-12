@@ -246,6 +246,21 @@ body::before{content:'';position:fixed;inset:0;
 .fi{animation:fadeIn .4s ease forwards;}
 @keyframes pipRing{0%{r:6;opacity:.8;stroke-width:1.5}100%{r:24;opacity:0;stroke-width:.5}}
 @keyframes epiRing{0%{r:9;opacity:.8;stroke-width:2}100%{r:30;opacity:0;stroke-width:.5}}
+
+/* ══ 화산 경보 패널 ══ */
+.volcano-panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;flex-shrink:0;overflow:hidden;}
+.volcano-panel .panel-hd{border-bottom:1px solid var(--border);padding:8px 14px;}
+.volcano-rows{display:flex;flex-direction:column;gap:0;}
+.volcano-row{display:flex;align-items:center;gap:8px;padding:5px 14px;border-bottom:1px solid rgba(0,180,255,0.05);}
+.volcano-row:last-child{border-bottom:none;}
+.vlv-badge{font-family:var(--font-m);font-size:13px;font-weight:700;width:54px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:3px;flex-shrink:0;letter-spacing:1px;}
+.vlv-lv1{background:rgba(100,120,140,0.4);color:#aaa;}
+.vlv-lv2{background:rgba(200,180,0,0.35);color:#ffe033;border:1px solid rgba(200,180,0,0.5);}
+.vlv-lv3{background:rgba(255,120,0,0.35);color:#ff9f40;border:1px solid rgba(255,120,0,0.5);}
+.vlv-lv4{background:rgba(255,45,45,0.35);color:#ff6060;border:1px solid rgba(255,45,45,0.5);}
+.vlv-lv5{background:rgba(140,0,180,0.45);color:#df80ff;border:1px solid rgba(140,0,180,0.6);}
+.vlv-name{font-size:16px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.vlv-empty{padding:10px 14px;font-size:14px;color:var(--text2);font-family:var(--font-m);}
 </style>
 </head>
 <body>
@@ -354,6 +369,17 @@ body::before{content:'';position:fixed;inset:0;
         </div>
       </div>
     </div>
+
+    <!-- 화산 경보 패널 -->
+    <div class="volcano-panel">
+      <div class="panel-hd">
+        <span>🌋 화산 경보 현황 (JMA)</span>
+        <span class="panel-hd-sm" id="vlv-upd">—</span>
+      </div>
+      <div class="volcano-rows" id="volcano-list">
+        <div class="vlv-empty">수신 중...</div>
+      </div>
+    </div>
   </div>
 
   <!-- ══ 지도 패널 ══ -->
@@ -380,6 +406,7 @@ body::before{content:'';position:fixed;inset:0;
       <div class="legend-item"><div class="legend-dot" style="background:#ff2d2d"></div>M5이상</div>
       <div class="legend-item"><div style="width:10px;height:10px;border:1.5px solid rgba(255,165,0,0.9);transform:rotate(45deg);flex-shrink:0;"></div>과거 진도 7↑</div>
       <div class="legend-item"><div style="width:20px;height:0;border-top:2.5px dashed rgba(255,120,0,0.85);flex-shrink:0;margin-right:2px;"></div>난카이 트로프</div>
+      <div class="legend-item"><div style="width:12px;height:12px;border-radius:50%;background:rgba(255,80,200,0.7);border:1.5px solid rgba(255,140,220,0.9);flex-shrink:0;"></div>활화산(경보Lv2↑)</div>
     </div>
   </div>
 
@@ -1158,6 +1185,8 @@ async function loadData(){
   setInterval(checkTsunami,BCAST.tsunamiInterval*1000);
   setInterval(fetchBroadcastSettings,300000); // 5분마다 설정 재로드
   loadPlants();
+  loadVolcanoData();
+  setInterval(loadVolcanoData,1800000); // 30분마다 화산 경보 갱신
   fetchQuakeNews();
   setInterval(fetchQuakeNews,1800000); // 30분마다 뉴스 갱신
 })();
@@ -1381,6 +1410,164 @@ function haversineKm(lat1,lon1,lat2,lon2){
   const dLat=(lat2-lat1)*toR,dLon=(lon2-lon1)*toR;
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*toR)*Math.cos(lat2*toR)*Math.sin(dLon/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// ══════════════════════════════════════════════
+//  화산 경보 시스템
+// ══════════════════════════════════════════════
+
+// 주요 활화산 좌표 (JMA 경보 발령 대상 111개 중 대표 47개)
+const VOLCANO_COORDS={
+  '硫黄島':{lat:24.75,lon:141.32},'三宅島':{lat:34.08,lon:139.53},
+  '伊豆大島':{lat:34.73,lon:139.39},'八丈島':{lat:33.14,lon:139.77},
+  '諏訪之瀬島':{lat:29.64,lon:129.72},'口永良部島':{lat:30.44,lon:130.22},
+  '薩摩硫黄島':{lat:30.79,lon:130.27},'桜島':{lat:31.59,lon:130.66},
+  '霧島山':{lat:31.93,lon:130.86},'阿蘇山':{lat:32.88,lon:131.10},
+  '雲仙岳':{lat:32.76,lon:130.30},'鶴見岳・伽藍岳':{lat:33.29,lon:131.43},
+  '九重山':{lat:33.10,lon:131.25},'由布岳':{lat:33.28,lon:131.39},
+  '普賢岳':{lat:32.76,lon:130.29},'多良間島近海':{lat:24.60,lon:124.70},
+  '草津白根山':{lat:36.62,lon:138.53},'浅間山':{lat:36.41,lon:138.52},
+  '富士山':{lat:35.36,lon:138.73},'伊豆東部火山群':{lat:34.92,lon:139.10},
+  '八ヶ岳':{lat:35.97,lon:138.37},'白山':{lat:36.15,lon:136.77},
+  '御嶽山':{lat:35.89,lon:137.48},'乗鞍岳':{lat:36.10,lon:137.55},
+  '焼岳':{lat:36.23,lon:137.59},'立山':{lat:36.57,lon:137.62},
+  '妙高山':{lat:36.90,lon:138.11},'新潟焼山':{lat:36.92,lon:138.04},
+  '磐梯山':{lat:37.60,lon:140.07},'那須岳':{lat:37.13,lon:139.97},
+  '吾妻山':{lat:37.73,lon:140.24},'蔵王山':{lat:38.13,lon:140.44},
+  '鳴子':{lat:38.73,lon:140.73},'栗駒山':{lat:38.97,lon:140.80},
+  '岩手山':{lat:39.85,lon:141.00},'秋田焼山':{lat:39.97,lon:140.75},
+  '八甲田山':{lat:40.65,lon:140.88},'岩木山':{lat:40.66,lon:140.30},
+  '恵山':{lat:41.80,lon:141.15},'駒ヶ岳':{lat:42.07,lon:140.68},
+  '有珠山':{lat:42.54,lon:140.84},'樽前山':{lat:42.69,lon:141.38},
+  '倶多楽':{lat:42.59,lon:141.20},'大雪山':{lat:43.66,lon:142.86},
+  '十勝岳':{lat:43.41,lon:142.69},'雌阿寒岳':{lat:43.38,lon:144.01},
+};
+
+// 경보 코드 → 레벨 숫자 변환
+function warningCodeToLevel(code){
+  const c=parseInt(code);
+  if(c===01||c===1)return 1;   // 평상
+  if(c===02||c===2||c===22)return 2; // 화구 주변 규제
+  if(c===03||c===3)return 3;   // 입산 규제
+  if(c===04||c===4)return 4;   // 피난 준비
+  if(c===05||c===5)return 5;   // 피난
+  return 2; // 기본
+}
+
+// 경보 레벨 한국어
+const VLV_LABEL={1:'Lv.1',2:'Lv.2',3:'Lv.3',4:'Lv.4',5:'Lv.5'};
+const VLV_DESC={1:'평상',2:'화구주변규제',3:'입산규제',4:'피난준비',5:'피난'};
+
+let volcanoData=[]; // {name, nameKr, level, lat, lon}
+
+// 화산명 일→한 변환 (주요 화산)
+const VOLCANO_KR={
+  '硫黄島':'이오지마','三宅島':'미야케지마','伊豆大島':'이즈오시마',
+  '八丈島':'하치조지마','諏訪之瀬島':'스와노세지마','口永良部島':'구치노에라부지마',
+  '薩摩硫黄島':'사쓰마이오지마','桜島':'사쿠라지마','霧島山':'기리시마산',
+  '阿蘇山':'아소산','雲仙岳':'운젠다케','草津白根山':'구사쓰시라네산',
+  '浅間山':'아사마산','富士山':'후지산','御嶽山':'온타케산',
+  '磐梯山':'반다이산','那須岳':'나스다케','吾妻山':'아즈마야마',
+  '蔵王山':'자오산','岩手山':'이와테산','有珠山':'우수잔',
+  '樽前山':'다루마에산','十勝岳':'도카치다케','雌阿寒岳':'메아칸다케',
+  '焼岳':'야케다케','白山':'하쿠산','鶴見岳・伽藍岳':'쓰루미다케',
+};
+
+async function loadVolcanoData(){
+  try{
+    const data=await fetch('https://www.jma.go.jp/bosai/volcano/data/warning.json')
+      .then(r=>r.json());
+
+    const parsed=[];
+    data.forEach(item=>{
+      // volcanoInfos 첫 번째 type(噴火警報・予報（対象火山）)에서 화산명+경보 코드 추출
+      const info=item.volcanoInfos?.find(v=>v.type?.includes('対象火山'));
+      if(!info)return;
+      info.items?.forEach(it=>{
+        it.areas?.forEach(area=>{
+          const name=area.name;
+          const level=warningCodeToLevel(it.code||'2');
+          const coord=VOLCANO_COORDS[name];
+          parsed.push({
+            name,
+            nameKr:VOLCANO_KR[name]||name,
+            level,
+            lat:coord?.lat||null,
+            lon:coord?.lon||null,
+          });
+        });
+      });
+    });
+
+    // 중복 제거 (같은 화산 중 최고 레벨만)
+    const uniq={};
+    parsed.forEach(v=>{
+      if(!uniq[v.name]||v.level>uniq[v.name].level) uniq[v.name]=v;
+    });
+    volcanoData=Object.values(uniq).sort((a,b)=>b.level-a.level);
+
+    renderVolcanoPanel();
+    drawVolcanoMarkers();
+
+    const now=new Date();
+    const ts=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    const el=document.getElementById('vlv-upd');
+    if(el)el.textContent=ts+' 갱신';
+    console.log('[Volcano] 경보 화산',volcanoData.length,'개 로드');
+  }catch(e){console.warn('[Volcano]',e.message);}
+}
+
+function renderVolcanoPanel(){
+  const el=document.getElementById('volcano-list');
+  if(!el)return;
+  // 레벨 2↑만 패널에 표시 (레벨1은 지도에만)
+  const active=volcanoData.filter(v=>v.level>=2);
+  if(active.length===0){
+    el.innerHTML='<div class="vlv-empty">🌋 현재 경보 발령 없음 (Lv.1 평상)</div>';
+    return;
+  }
+  el.innerHTML=active.map(v=>`
+    <div class="volcano-row">
+      <div class="vlv-badge vlv-lv${v.level}">${VLV_LABEL[v.level]}</div>
+      <div class="vlv-name">${v.nameKr}<span style="color:var(--text2);font-size:13px;margin-left:4px;">${VLV_DESC[v.level]}</span></div>
+    </div>`).join('');
+}
+
+function drawVolcanoMarkers(){
+  if(!mapOk||!mSvg||!mProj)return;
+  mSvg.selectAll('.vlv-marker').remove();
+
+  volcanoData.forEach(v=>{
+    if(!v.lat||!v.lon)return;
+    const [x,y]=mProj([v.lon,v.lat]);
+    const lv=v.level;
+    // 레벨별 색상
+    const colors={1:'rgba(100,120,140,0.6)',2:'rgba(220,200,0,0.85)',3:'rgba(255,110,0,0.9)',4:'rgba(255,50,50,0.95)',5:'rgba(160,0,220,0.95)'};
+    const strokes={1:'rgba(140,160,180,0.5)',2:'rgba(255,230,0,0.9)',3:'rgba(255,150,0,0.95)',4:'rgba(255,100,100,1)',5:'rgba(200,80,255,1)'};
+    const r=lv>=4?7:lv>=3?6:lv>=2?5:4;
+    const col=colors[lv]||colors[2];
+    const str=strokes[lv]||strokes[2];
+
+    const g=mSvg.append('g').attr('class','vlv-marker');
+
+    // 레벨 2↑는 펄스 링
+    if(lv>=2){
+      g.append('circle')
+        .attr('cx',x).attr('cy',y).attr('r',r+2)
+        .attr('fill','none')
+        .attr('stroke',str)
+        .attr('stroke-width',1)
+        .attr('opacity',0.5);
+    }
+
+    // 삼각형 마커 (화산 기호)
+    const h=r*1.8;
+    g.append('polygon')
+      .attr('points',`${x},${y-h} ${x+r},${y+r*0.6} ${x-r},${y+r*0.6}`)
+      .attr('fill',col)
+      .attr('stroke',str)
+      .attr('stroke-width',lv>=3?1.5:1);
+  });
 }
 
 async function loadPlants(){
