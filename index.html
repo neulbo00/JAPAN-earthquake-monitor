@@ -1035,8 +1035,14 @@ async function loadData(){
       if(el) el.classList.toggle('active',k===sc);
     });
 
-    // 지역별 최대진도
-    const pts=data[0].points||[];
+    // 지역별 최대진도 — points가 있는 가장 최신 항목 사용 (속보 단계엔 points 없음)
+    const latestWithPts=data.find(d=>d.points&&d.points.length>0);
+    const pts=latestWithPts?latestWithPts.points:[];
+    if(!pts.length){
+      if(typeof regionRAF!=='undefined'&&regionRAF)cancelAnimationFrame(regionRAF);
+      const _ri=document.getElementById('region-list');
+      if(_ri)_ri.innerHTML='';
+    }
     if(pts.length){
       const CITY_TO_PREF={
         '横浜':'가나가와현','横須賀':'가나가와현','鎌倉':'가나가와현','藤沢':'가나가와현',
