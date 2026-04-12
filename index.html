@@ -998,15 +998,22 @@ async function loadData(){
       }
     }
     
-    // 두 데이터를 합쳐서 중복 제거
+    // 두 데이터를 합쳐서 중복 제거 (발생시각 '분' 단위 기준, ±2분 오차 허용)
     const mergedStats = [...data];
-    const rids = new Set(mergedStats.map(q => q.id || q.eid));
+    const liveIndex = new Set();
+    data.forEach(q => {
+      const key = Math.floor(new Date(q.earthquake?.time || q.time || 0).getTime() / 60000);
+      liveIndex.add(key);
+    });
+
     cachedStatsData.forEach(q => {
-      // API 응답은 id와 time, json 데이터는 eid와 at 필드를 가짐
-      if(!rids.has(q.id) && !rids.has(q.eid)) {
-        mergedStats.push(q);
-        rids.add(q.id || q.eid);
+      const qTime = new Date(q.earthquake?.time || q.time || q.at || 0).getTime();
+      const key = Math.floor(qTime / 60000);
+      let isDup = false;
+      for(let d = -2; d <= 2; d++) {
+        if(liveIndex.has(key + d)) { isDup = true; break; }
       }
+      if(!isDup) mergedStats.push(q);
     });
 
     const nowTime = Date.now();
@@ -1588,6 +1595,7 @@ function drawVolcanoMarkers(){
 
   volcanoData.forEach(v=>{
     if(!v.lat||!v.lon)return;
+    if(v.level < 2) return;
     const [x,y]=mProj([v.lon,v.lat]);
     const lv=v.level;
     // 레벨별 색상
