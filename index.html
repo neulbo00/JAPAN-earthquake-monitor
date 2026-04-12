@@ -1531,37 +1531,33 @@ async function loadVolcanoData(){
     const data=await fetch('https://www.jma.go.jp/bosai/volcano/data/warning.json')
       .then(r=>r.json());
 
-    const parsed=[];
+    // ① 전체 화산 Lv1 베이스 초기화
+    const levels={};
+    Object.keys(VOLCANO_COORDS).forEach(k=>{ levels[k]=1; });
+
+    // ② API 경보 레벨 오버레이
     data.forEach(item=>{
-      // volcanoInfos 첫 번째 type(噴火警報・予報（対象火山）)에서 화산명+경보 코드 추출
       const info=item.volcanoInfos?.find(v=>v.type?.includes('対象火山'));
       if(!info)return;
       info.items?.forEach(it=>{
         it.areas?.forEach(area=>{
           const name=area.name;
-          // 중첩 괄호 처리: 草津白根山（白根山（湯釜付近））→ 草津白根山
-          let baseName=name;
-          let _prev;
-          do { _prev=baseName; baseName=baseName.replace(/（[^（）]*）/g,''); } while(baseName!==_prev);
-          baseName=baseName.trim();
-          const level=warningCodeToLevel(it.code||'12');
-          const coord=VOLCANO_COORDS[name]||VOLCANO_COORDS[baseName];
-          const nameKr=VOLCANO_KR[name]||VOLCANO_KR[baseName]||baseName;
-          parsed.push({
-            name, baseName, nameKr, level,
-            lat:coord?.lat||null,
-            lon:coord?.lon||null,
-          });
+          let bn=name, _p;
+          do{ _p=bn; bn=bn.replace(/（[^（）]*）/g,''); }while(bn!==_p);
+          bn=bn.trim();
+          const lv=warningCodeToLevel(it.code||'12');
+          const key=VOLCANO_COORDS[name]?name:VOLCANO_COORDS[bn]?bn:null;
+          if(key && lv>(levels[key]||1)) levels[key]=lv;
         });
       });
     });
 
-    // 중복 제거 (같은 화산 중 최고 레벨만)
-    const uniq={};
-    parsed.forEach(v=>{
-      if(!uniq[v.name]||v.level>uniq[v.name].level) uniq[v.name]=v;
-    });
-    volcanoData=Object.values(uniq).sort((a,b)=>b.level-a.level);
+    // ③ volcanoData 배열 생성 (전체 화산)
+    volcanoData=Object.entries(levels).map(([name,level])=>{
+      const coord=VOLCANO_COORDS[name];
+      return { name, baseName:name, nameKr:VOLCANO_KR[name]||name, level,
+               lat:coord?.lat||null, lon:coord?.lon||null };
+    }).sort((a,b)=>b.level-a.level);
 
     renderVolcanoPanel();
     drawVolcanoMarkers();

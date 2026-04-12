@@ -1759,8 +1759,9 @@ async function drawPlantLayer(){
 }
 
 // ── 화산 경보 레이어 ──
+// NOTE: index.html 의 VOLCANO_COORDS / VOLCANO_KR 와 동일 데이터
+// 업데이트 시 data/volcano-coords.js 와 함께 동기화할 것
 const VOLCANO_COORDS_D={
-  // ── 해역 화산 ──
   '西之島':{lat:27.24,lon:140.88},'福徳岡ノ場':{lat:21.93,lon:143.54},
   'ベヨネース列岩':{lat:31.88,lon:139.92},'須美寿島':{lat:31.47,lon:140.05},
   '硫黄島':{lat:24.75,lon:141.32},'三宅島':{lat:34.08,lon:139.53},
@@ -1788,7 +1789,6 @@ const VOLCANO_COORDS_D={
   '十勝岳':{lat:43.41,lon:142.69},'雌阿寒岳':{lat:43.38,lon:144.01},
 };
 const VOLCANO_KR_D={
-  // ── 해역 화산 ──
   '西之島':'니시노시마','福徳岡ノ場':'후쿠토쿠오카노바',
   'ベヨネース列岩':'베요네스 열암','須美寿島':'스미스 섬',
   '硫黄島':'이오지마','三宅島':'미야케지마','伊豆大島':'이즈오시마',
@@ -1822,61 +1822,76 @@ async function drawVolcanoLayer(){
   dashSvg.selectAll('.layer-volcano').remove();
   const tooltip=document.getElementById('map-tooltip');
   const svgEl=document.getElementById('dash-map');
+
+  // ① 전체 51개 화산을 Lv1(평상) 베이스로 초기화
+  const levels={};
+  Object.keys(VOLCANO_COORDS_D).forEach(k=>{ levels[k]=1; });
+
+  // ② JMA API로 경보 레벨 오버레이 (실패해도 Lv1 표시는 유지)
+  let elevated=0;
   try{
     const data=await fetch('https://www.jma.go.jp/bosai/volcano/data/warning.json').then(r=>r.json());
-    const parsed={};
     data.forEach(item=>{
       const info=item.volcanoInfos?.find(v=>v.type?.includes('対象火山'));
       if(!info) return;
       info.items?.forEach(it=>{
         const c=parseInt(it.code||'12');
-        // 11=Lv1, 12=Lv2, 13=Lv3, 14=Lv4, 15=Lv5
-        // 22=火口周辺危険(Lv2), 23=入山危険(Lv3), 35=海域警報(Lv3), 36=海域警戒(Lv2)
-        let lv=c===11||c===1?1:c===12||c===2||c===22||c===36?2:c===13||c===3||c===23||c===35?3:c===14||c===4?4:c===15||c===5||c===21?5:2;
+        // 11=Lv1, 12=Lv2, 22=火口周辺危険(Lv2), 36=海域警戒(Lv2)
+        // 13=Lv3, 23=入山危険(Lv3), 35=海域警報(Lv3)
+        // 14=Lv4, 15=Lv5
+        const lv=c===11?1:c===12||c===22||c===36?2:c===13||c===23||c===35?3:c===14?4:c===15?5:2;
         it.areas?.forEach(area=>{
           const n=area.name;
-          // 중첩 괄호 처리: 草津白根山（白根山（湯釜付近））→ 草津白根山
-          let bn=n;
-          let prev;
-          do { prev=bn; bn=bn.replace(/（[^（）]*）/g,''); } while(bn!==prev);
+          let bn=n, p;
+          do{ p=bn; bn=bn.replace(/（[^（）]*）/g,''); }while(bn!==p);
           bn=bn.trim();
-          const key=VOLCANO_COORDS_D[n]?n:VOLCANO_COORDS_D[bn]?bn:n;
-          if(!parsed[key]||lv>parsed[key].lv) parsed[key]={lv, nameOrig:n, nameBase:bn};
+          const key=VOLCANO_COORDS_D[n]?n:VOLCANO_COORDS_D[bn]?bn:null;
+          if(key && lv>(levels[key]||1)) levels[key]=lv;
         });
       });
     });
-    Object.entries(parsed).forEach(([name,{lv, nameOrig, nameBase}])=>{
-      const coord=VOLCANO_COORDS_D[name]||VOLCANO_COORDS_D[nameBase];
-      if(!coord) return;
-      const [x,y]=dashProj([coord.lon,coord.lat]);
-      const col=VLV_COLORS_D[lv]||VLV_COLORS_D[2];
-      const r=lv>=4?8:lv>=3?7:lv>=2?6:4;
-      const h=r*1.8;
-      const nameKr=VOLCANO_KR_D[name]||VOLCANO_KR_D[nameBase]||VOLCANO_KR_D[nameOrig]||name;
-      const g=dashSvg.append('g').attr('class','layer-volcano')
-        .style('cursor','pointer')
-        .style('display', layerState.volcano ? null : 'none');
-      // 삼각형 마커
-      g.append('polygon')
-        .attr('points',`${x},${y-h} ${x+r},${y+r*0.6} ${x-r},${y+r*0.6}`)
-        .attr('fill',col.fill).attr('stroke',col.stroke).attr('stroke-width',lv>=3?1.8:1.2);
-      // 레벨 2↑ 펄스 링
-      if(lv>=2){
-        g.append('circle').attr('cx',x).attr('cy',y-h*0.2).attr('r',r+3)
-          .attr('fill','none').attr('stroke',col.stroke).attr('stroke-width',0.8).attr('opacity',0.4);
-      }
-      // 툴팁
-      g.on('mouseover',function(){
-        tooltip.innerHTML=`<div style="color:#ff9f40;font-weight:700;font-size:13px;">🌋 ${nameKr}</div><div style="color:#aaa;font-size:12px;margin-top:2px;">${name}</div><div style="color:${col.stroke};font-size:12px;margin-top:3px;">경보 Lv.${lv} — ${VLV_LEVEL_NAME[lv]}</div>`;
-        const rect=svgEl.getBoundingClientRect();
-        const pr=svgEl.closest('.panel').getBoundingClientRect();
-        tooltip.style.left=(rect.left-pr.left+x+10)+'px';
-        tooltip.style.top=(rect.top-pr.top+y-20)+'px';
-        tooltip.style.display='block';
-      }).on('mouseout',function(){ tooltip.style.display='none'; });
-    });
-    console.log('[Volcano] 대시보드 마커',Object.keys(parsed).length,'개');
-  }catch(e){ console.warn('[Volcano]',e.message); }
+    elevated=Object.values(levels).filter(l=>l>=2).length;
+    console.log(`[Volcano] 전체 ${Object.keys(levels).length}개, Lv2↑ ${elevated}개`);
+  }catch(e){
+    console.warn('[Volcano] API 오류 (Lv1 베이스만 표시):',e.message);
+  }
+
+  // ③ 전체 화산 마커 렌더링
+  const vis=layerState.volcano?null:'none';
+  Object.entries(VOLCANO_COORDS_D).forEach(([name,coord])=>{
+    const lv=levels[name]||1;
+    const [x,y]=dashProj([coord.lon,coord.lat]);
+    if(!isFinite(x)||!isFinite(y)) return;
+    const col=VLV_COLORS_D[lv]||VLV_COLORS_D[1];
+    const r=lv>=4?9:lv>=3?8:lv>=2?7:5;
+    const h=r*1.8;
+    const nameKr=VOLCANO_KR_D[name]||name;
+    const g=dashSvg.append('g').attr('class','layer-volcano')
+      .style('cursor','pointer').style('display',vis);
+    // 삼각형 마커
+    g.append('polygon')
+      .attr('points',`${x},${y-h} ${x+r},${y+r*0.6} ${x-r},${y+r*0.6}`)
+      .attr('fill',col.fill).attr('stroke',col.stroke)
+      .attr('stroke-width',lv>=3?1.8:lv>=2?1.4:0.8);
+    // Lv2↑ 펄스 링
+    if(lv>=2){
+      g.append('circle').attr('cx',x).attr('cy',y-h*0.2).attr('r',r+4)
+        .attr('fill','none').attr('stroke',col.stroke).attr('stroke-width',1).attr('opacity',0.45);
+    }
+    // 툴팁
+    g.on('mouseover',function(){
+      tooltip.innerHTML=`<div style="color:#ff9f40;font-weight:700;font-size:13px;">🌋 ${nameKr}</div><div style="color:#aaa;font-size:12px;margin-top:2px;">${name}</div><div style="color:${col.stroke};font-size:12px;margin-top:3px;">경보 Lv.${lv} — ${VLV_LEVEL_NAME[lv]}</div>`;
+      const rect=svgEl.getBoundingClientRect();
+      const pr=svgEl.closest('.panel').getBoundingClientRect();
+      tooltip.style.left=(rect.left-pr.left+x+10)+'px';
+      tooltip.style.top=(rect.top-pr.top+y-20)+'px';
+      tooltip.style.display='block';
+    }).on('mouseout',function(){ tooltip.style.display='none'; });
+  });
+
+  // ④ 버튼 레이블 업데이트
+  const btn=document.getElementById('btn-volcano');
+  if(btn) btn.title=`화산 경보 — 전체 ${Object.keys(VOLCANO_COORDS_D).length}개 / Lv2↑ ${elevated}개`;
 }
 
 // ── 대시보드 지도 ──
