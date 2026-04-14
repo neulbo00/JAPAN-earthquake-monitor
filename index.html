@@ -580,6 +580,29 @@ function locKr(n){
 const SM={'10':'1','20':'2','30':'3','40':'4','45':'5약','50':'5강','55':'6약','60':'6강','70':'7'};
 const SC={'1':'sh-1','2':'sh-2','3':'sh-3','4':'sh-4','5약':'sh-5l','5강':'sh-5u','6약':'sh-6l','6강':'sh-6u','7':'sh-7'};
 const KR={'1':'한국 진도 3','2':'한국 진도 4','3':'한국 진도 5','4':'한국 진도 6','5약':'한국 진도 7','5강':'한국 진도 7~8','6약':'한국 진도 8','6강':'한국 진도 9','7':'한국 진도 10~12'};
+// ── 도도부현 중심 좌표 [lon, lat] ──
+const PREF_COORDS={
+  '北海道':[142.8,43.5],'青森県':[140.7,40.8],'岩手県':[141.1,39.7],
+  '宮城県':[140.9,38.3],'秋田県':[140.1,39.7],'山形県':[140.4,38.4],
+  '福島県':[140.5,37.4],'茨城県':[140.4,36.3],'栃木県':[139.8,36.6],
+  '群馬県':[138.9,36.4],'埼玉県':[139.6,36.0],'千葉県':[140.1,35.6],
+  '東京都':[139.7,35.7],'神奈川県':[139.4,35.4],'新潟県':[139.0,37.5],
+  '富山県':[137.2,36.7],'石川県':[136.6,36.6],'福井県':[136.2,36.1],
+  '山梨県':[138.6,35.6],'長野県':[138.2,36.2],'岐阜県':[137.0,35.7],
+  '静岡県':[138.4,34.9],'愛知県':[137.1,35.0],'三重県':[136.5,34.5],
+  '滋賀県':[136.2,35.1],'京都府':[135.8,35.1],'大阪府':[135.5,34.7],
+  '兵庫県':[134.9,34.8],'奈良県':[135.8,34.4],'和歌山県':[135.2,34.0],
+  '鳥取県':[133.8,35.4],'島根県':[132.4,35.0],'岡山県':[133.9,34.7],
+  '広島県':[132.5,34.4],'山口県':[131.5,34.2],'徳島県':[134.3,34.0],
+  '香川県':[134.0,34.3],'愛媛県':[132.8,33.9],'高知県':[133.5,33.6],
+  '福岡県':[130.5,33.6],'佐賀県':[130.2,33.3],'長崎県':[129.7,32.8],
+  '熊本県':[130.7,32.8],'大分県':[131.6,33.2],'宮崎県':[131.4,32.0],
+  '鹿児島県':[130.6,31.6],'沖縄県':[127.7,26.3],
+  // 홋카이도 서브 지역 (p2pquake pref 필드 폴백)
+  '胆振':[141.3,42.7],'石狩':[141.4,43.2],'後志':[140.4,43.0],
+  '日高':[142.3,42.4],'十勝':[143.2,43.0],'釧路':[144.4,43.1],'根室':[145.6,43.5],
+  '渡島':[140.7,41.8],'檜山':[139.8,42.1],'上川':[142.5,43.8],'留萌':[141.6,44.1],'宗谷':[141.7,45.1],
+};
 function wxCode(c){
   if(c===0)return{i:'☀️',d:'맑음'};if(c<=2)return{i:'⛅',d:'구름 조금'};
   if(c===3)return{i:'☁️',d:'흐림'};if(c<=49)return{i:'🌫️',d:'안개'};
@@ -769,6 +792,61 @@ function drawHistorical(){
       .text(`M${eq.mag} · 진도 7`);
   });
 }
+// ── 진도4 이상 지역 지도 표시 ──
+const SHINDO_STYLE={
+  40:{fill:'rgba(245,230,66,0.25)', stroke:'rgba(245,230,66,0.80)', r:20},
+  45:{fill:'rgba(232,133,61,0.30)', stroke:'rgba(232,133,61,0.88)', r:24},
+  50:{fill:'rgba(224,96,32,0.35)',  stroke:'rgba(224,96,32,0.92)',  r:27},
+  55:{fill:'rgba(192,57,43,0.38)', stroke:'rgba(192,57,43,0.95)',  r:30},
+  60:{fill:'rgba(139,0,0,0.42)',   stroke:'rgba(200,30,30,1.0)',   r:34},
+  70:{fill:'rgba(123,13,127,0.42)',stroke:'rgba(190,80,220,1.0)',  r:38},
+};
+function drawShindoMap(pts){
+  if(!mapOk||!mSvg||!mProj)return;
+  mSvg.selectAll('.shindo-region').remove();
+  // 도도부현별 최대 진도 집계 (진도4 = scale 40 이상만)
+  const prefMax={};
+  pts.forEach(r=>{
+    if(!r.pref||!r.scale||r.scale<40)return;
+    if(!prefMax[r.pref]||r.scale>prefMax[r.pref])prefMax[r.pref]=r.scale;
+  });
+  if(!Object.keys(prefMax).length)return;
+  // 낮은 진도부터 그려서 높은 진도가 위에 표시
+  const sorted=Object.entries(prefMax).sort((a,b)=>a[1]-b[1]);
+  const el=document.getElementById('japan-map');
+  const W=el?el.clientWidth||700:700, H=el?el.clientHeight||600:600;
+  sorted.forEach(([pref,scale])=>{
+    const coord=PREF_COORDS[pref];
+    if(!coord)return;
+    const [x,y]=mProj(coord);
+    if(x<0||x>W||y<0||y>H)return;
+    // scale을 10단위로 내림해서 스타일 조회
+    const sk=([70,60,55,50,45,40]).find(k=>scale>=k)||40;
+    const st=SHINDO_STYLE[sk];
+    const g=mSvg.append('g').attr('class','shindo-region');
+    // 진도6약↑ 글로우 링
+    if(scale>=55){
+      g.append('circle')
+        .attr('cx',x).attr('cy',y).attr('r',st.r+9)
+        .attr('fill','none').attr('stroke',st.stroke)
+        .attr('stroke-width',1.2).attr('opacity',0.28);
+    }
+    // 메인 원
+    g.append('circle')
+      .attr('cx',x).attr('cy',y).attr('r',st.r)
+      .attr('fill',st.fill)
+      .attr('stroke',st.stroke).attr('stroke-width',1.6);
+    // 진도 라벨
+    g.append('text')
+      .attr('x',x).attr('y',y+0.5)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('fill','#fff').attr('font-family','Bebas Neue,sans-serif')
+      .attr('font-size',scale>=55?'13px':'11px').attr('font-weight','700')
+      .attr('pointer-events','none')
+      .text(SM[String(scale)]||'—');
+  });
+}
+
 function drawEpi(qs){
   if(!mapOk||!mSvg||!mProj)return;
   mSvg.selectAll('.epi,.ering').remove();
@@ -1175,8 +1253,10 @@ async function loadData(){
       if(typeof regionRAF!=='undefined'&&regionRAF)cancelAnimationFrame(regionRAF);
       const _ri=document.getElementById('region-list');
       if(_ri)_ri.innerHTML='';
+      if(mSvg)mSvg.selectAll('.shindo-region').remove();
     }
     if(pts.length){
+      drawShindoMap(pts);
       const CITY_TO_PREF={
         '横浜':'가나가와현','横須賀':'가나가와현','鎌倉':'가나가와현','藤沢':'가나가와현',
         '茅ヶ崎':'가나가와현','三浦':'가나가와현','大和':'가나가와현','海老名':'가나가와현',
