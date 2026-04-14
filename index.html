@@ -180,8 +180,11 @@ body::before{content:'';position:fixed;inset:0;
 .clock-date{font-family:var(--font-m);font-size:18px;color:var(--text2);margin-top:3px;}
 
 /* 최근 지진 이력 */
-.eq-list-panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:0;overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0;}
-.eq-list-body{overflow:hidden;padding:2px 0;flex:1;}
+.eq-list-panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:0;overflow:hidden;display:flex;flex-direction:column;flex-shrink:0;}
+.eq-list-body{padding:2px 0;}
+/* 이력 행 경보 레벨 표시 */
+.eq-row.lv-warn {border-left:3px solid rgba(255,140,0,0.85);padding-left:9px;}
+.eq-row.lv-alert{border-left:3px solid rgba(255,45,45,0.95);padding-left:9px;}
 .eq-row{
   display:grid;
   grid-template-columns:38px 50px 1fr 50px 110px;
@@ -246,6 +249,26 @@ body::before{content:'';position:fixed;inset:0;
 .fi{animation:fadeIn .4s ease forwards;}
 @keyframes pipRing{0%{r:6;opacity:.8;stroke-width:1.5}100%{r:24;opacity:0;stroke-width:.5}}
 @keyframes epiRing{0%{r:9;opacity:.8;stroke-width:2}100%{r:30;opacity:0;stroke-width:.5}}
+
+/* ══ 지진 경보 현황 패널 ══ */
+.alert-status-panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column;}
+.alert-status-body{padding:10px 12px;display:flex;flex-direction:column;gap:7px;flex:1;overflow:hidden;}
+.ast-badge{display:flex;align-items:center;gap:11px;padding:10px 14px;border-radius:5px;flex-shrink:0;}
+.ast-badge.s-normal{background:rgba(0,180,255,0.07);border:1px solid rgba(0,180,255,0.22);}
+.ast-badge.s-warn  {background:rgba(255,140,0,0.12); border:1px solid rgba(255,140,0,0.45);}
+.ast-badge.s-alert {background:rgba(255,45,45,0.14); border:1px solid rgba(255,45,45,0.55);animation:alertPulse .8s ease-in-out infinite alternate;}
+.ast-icon{font-size:24px;line-height:1;flex-shrink:0;}
+.ast-label{font-family:var(--font-d);font-size:28px;letter-spacing:2px;line-height:1.1;}
+.ast-badge.s-normal .ast-label{color:var(--accent2);}
+.ast-badge.s-warn   .ast-label{color:var(--warn);}
+.ast-badge.s-alert  .ast-label{color:var(--danger);}
+.ast-detail{font-family:var(--font-m);font-size:12px;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ast-eq-list{display:flex;flex-direction:column;gap:3px;overflow:hidden;}
+.ast-eq-row{display:grid;grid-template-columns:36px 48px 1fr 52px;align-items:center;gap:6px;padding:5px 12px;border-radius:3px;}
+.ast-eq-row.lv-warn {background:rgba(255,140,0,0.08); border-left:3px solid rgba(255,140,0,0.8);padding-left:9px;}
+.ast-eq-row.lv-alert{background:rgba(255,45,45,0.1);  border-left:3px solid rgba(255,45,45,0.9);padding-left:9px;}
+.ast-empty{font-family:var(--font-m);font-size:13px;color:var(--text2);padding:6px 2px;}
+.ast-hint{font-family:var(--font-m);font-size:11px;color:rgba(122,154,176,0.65);margin-top:auto;padding-top:4px;}
 
 /* ══ 화산 경보 패널 ══ */
 .volcano-panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;flex-shrink:0;overflow:hidden;}
@@ -418,13 +441,32 @@ body::before{content:'';position:fixed;inset:0;
       <div class="clock-date" id="clock-date">—</div>
     </div>
 
-    <!-- 최근 지진 이력 -->
+    <!-- 최근 지진 이력 (5건) -->
     <div class="eq-list-panel">
       <div class="panel-hd">
         <span>◈ 최근 지진 이력</span>
         <span class="panel-hd-sm" id="list-upd">—</span>
       </div>
       <div class="eq-list-body"><div id="eq-list"></div></div>
+    </div>
+
+    <!-- 지진 경보 현황 -->
+    <div class="alert-status-panel">
+      <div class="panel-hd">
+        <span>◈ 지진 경보 현황</span>
+        <span class="panel-hd-sm" id="ast-upd">—</span>
+      </div>
+      <div class="alert-status-body">
+        <div class="ast-badge s-normal" id="ast-badge">
+          <div class="ast-icon" id="ast-icon">✅</div>
+          <div style="min-width:0;">
+            <div class="ast-label" id="ast-label">정상</div>
+            <div class="ast-detail" id="ast-detail">수신 중...</div>
+          </div>
+        </div>
+        <div class="ast-eq-list" id="ast-eq-list"></div>
+        <div class="ast-hint">기준 — 진도3↑ 주의 · 진도4↑ 경보 · M6.5↑ 강진</div>
+      </div>
     </div>
 
     <!-- 규모 분포 -->
@@ -946,6 +988,62 @@ function startRegionScroll(){
   regionRAF=requestAnimationFrame(animate);
 }
 
+function updateAlertStatus(qs){
+  const recent5=qs.slice(0,5);
+  const now=Date.now();
+  const H24=86400000;
+  const ALERT_SC=buildScaleSet(BCAST.alertShindo);
+  const TTS_SC=buildScaleSet(BCAST.ttsShindo);
+  let maxLevel='normal';
+  let topEq=null;
+  const alertItems=[];
+  recent5.forEach(q=>{
+    const sc=q.earthquake?.maxScale?(SM[String(q.earthquake.maxScale)]||'—'):'—';
+    const mag=q.earthquake?.hypocenter?.magnitude||0;
+    const age=now-new Date(q.earthquake?.time||q.time||0).getTime();
+    if(age>H24)return;
+    let lv='';
+    if(mag>=BCAST.alertMag||ALERT_SC[sc]) lv='lv-alert';
+    else if(TTS_SC[sc])                   lv='lv-warn';
+    if(!lv)return;
+    alertItems.push({q,sc,mag,lv});
+    if(lv==='lv-alert'&&maxLevel!=='alert'){maxLevel='alert';topEq={q,sc,mag};}
+    else if(lv==='lv-warn'&&maxLevel==='normal'){maxLevel='warn';if(!topEq)topEq={q,sc,mag};}
+  });
+  const badge=document.getElementById('ast-badge');
+  const icon=document.getElementById('ast-icon');
+  const label=document.getElementById('ast-label');
+  const detail=document.getElementById('ast-detail');
+  const eqList=document.getElementById('ast-eq-list');
+  if(!badge)return;
+  badge.className='ast-badge s-'+(maxLevel==='alert'?'alert':maxLevel==='warn'?'warn':'normal');
+  if(maxLevel==='alert'){
+    icon.textContent='🔴';label.textContent='경보 발령';
+    detail.textContent=topEq?`${locKr(topEq.q.earthquake?.hypocenter?.name||'불명')}  M${topEq.mag.toFixed(1)}  진도 ${topEq.sc}`:'강진 경보';
+  }else if(maxLevel==='warn'){
+    icon.textContent='⚠️';label.textContent='주의';
+    detail.textContent=topEq?`${locKr(topEq.q.earthquake?.hypocenter?.name||'불명')}  M${topEq.mag.toFixed(1)}  진도 ${topEq.sc}`:'진도3 이상 감지';
+  }else{
+    icon.textContent='✅';label.textContent='정상';
+    detail.textContent='최근 24시간 주의 이상 없음';
+  }
+  eqList.innerHTML=alertItems.length>0
+    ?alertItems.map(({q,sc,mag,lv})=>{
+        const h=q.earthquake?.hypocenter;
+        const t=new Date(q.earthquake?.time||q.time||0);
+        const p=n=>String(n).padStart(2,'0');
+        return `<div class="ast-eq-row ${lv}">
+          <div class="eq-row-shindo ${SC[sc]||'sh-1'}">${sc}</div>
+          <div class="eq-row-mag ${mc(parseFloat(mag.toFixed(1)))}">M${mag.toFixed(1)}</div>
+          <div class="eq-row-loc">${locKr(h?.name)}</div>
+          <div class="eq-row-datetime">${p(t.getHours())}:${p(t.getMinutes())}</div>
+        </div>`;
+      }).join('')
+    :'<div class="ast-empty">최근 경보 이상 없음</div>';
+  const astUpd=document.getElementById('ast-upd');
+  if(astUpd)astUpd.textContent='갱신: '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+}
+
 async function loadData(){
   try{
     const _raw=await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=20').then(r=>r.json());
@@ -1039,23 +1137,28 @@ async function loadData(){
     // 날씨
     if(h?.latitude&&h?.longitude){loadWx(h.latitude,h.longitude,locKr(h.name||'불명'));drawPip(h.latitude,h.longitude,locKr(h.name||'불명'));}
 
-    // 이력 [진도][규모][지역][깊이][날짜시간]
-    document.getElementById('eq-list').innerHTML=data.slice(0,10).map(d=>{
+    // 이력 [진도][규모][지역][깊이][날짜시간] — 최근 5건
+    const _ALERT_SC=buildScaleSet(BCAST.alertShindo);
+    const _TTS_SC=buildScaleSet(BCAST.ttsShindo);
+    document.getElementById('eq-list').innerHTML=data.slice(0,5).map(d=>{
       const dh=d.earthquake?.hypocenter;
       const m=dh?.magnitude?dh.magnitude.toFixed(1):'—';
       const dsc=d.earthquake?.maxScale?(SM[String(d.earthquake.maxScale)]||'—'):'—';
       const t=new Date(d.earthquake?.time||d.time||0);
       const p=n=>String(n).padStart(2,'0');
       const dtStr=t?`${p(t.getMonth()+1)}/${p(t.getDate())} ${p(t.getHours())}:${p(t.getMinutes())}`:'—';
-      return `<div class="eq-row fi">
+      const magNum=parseFloat(m);
+      const lvCls=magNum>=BCAST.alertMag||_ALERT_SC[dsc]?'lv-alert':_TTS_SC[dsc]?'lv-warn':'';
+      return `<div class="eq-row fi${lvCls?' '+lvCls:''}">
         <div class="eq-row-shindo ${SC[dsc]||'sh-1'}">${dsc}</div>
-        <div class="eq-row-mag ${mc(parseFloat(m))}">M${m}</div>
+        <div class="eq-row-mag ${mc(magNum)}">M${m}</div>
         <div class="eq-row-loc">${locKr(dh?.name)}</div>
         <div class="eq-row-depth">${dh?.depth?dh.depth+'km':'—'}</div>
         <div class="eq-row-datetime">${dtStr}</div>
       </div>`;
     }).join('');
     document.getElementById('list-upd').textContent='갱신: '+new Date().toLocaleTimeString('ko-KR');
+    updateAlertStatus(data);
 
     // 스펙트럼 바
     const SCALE_POS={'1':6,'2':17,'3':28,'4':39,'5약':50,'5강':61,'6약':72,'6강':83,'7':96};
@@ -1175,7 +1278,7 @@ async function loadData(){
     }
 
     buildTicker(data);
-    drawEpi(data.filter(d=>d.earthquake?.hypocenter?.latitude));
+    drawEpi(data.filter(d=>d.earthquake?.hypocenter?.latitude).slice(0,15));
     drawSeismo(data);
   }catch(e){console.error('오류',e);}
 }
