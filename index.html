@@ -847,6 +847,73 @@ function drawShindoMap(pts){
   });
 }
 
+// ── 시구정촌 좌표 캐시 (GSI API) ──
+const cityCoordCache=new Map();
+async function fetchCityCoord(addr){
+  if(cityCoordCache.has(addr))return cityCoordCache.get(addr);
+  try{
+    const url=`https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(addr)}&limit=1`;
+    const ctrl=new AbortController();setTimeout(()=>ctrl.abort(),5000);
+    const res=await fetch(url,{signal:ctrl.signal});
+    const d=await res.json();
+    if(d&&d.length>0){
+      const[lon,lat]=d[0].geometry.coordinates;
+      const v=[lon,lat];cityCoordCache.set(addr,v);return v;
+    }
+  }catch(e){}
+  cityCoordCache.set(addr,null);return null;
+}
+
+// ── 시구정촌 진도 표시 스타일 (도도부현보다 작고 진하게) ──
+const CITY_SHINDO_STYLE={
+  40:{fill:'rgba(245,230,66,0.80)',stroke:'rgba(255,240,80,1)',  r:7},
+  45:{fill:'rgba(232,133,61,0.85)',stroke:'rgba(255,160,70,1)',  r:8},
+  50:{fill:'rgba(224,96,32,0.88)', stroke:'rgba(255,130,50,1)',  r:9},
+  55:{fill:'rgba(192,57,43,0.90)', stroke:'rgba(220,80,60,1)',   r:10},
+  60:{fill:'rgba(139,0,0,0.92)',   stroke:'rgba(220,40,40,1)',   r:11},
+  70:{fill:'rgba(123,13,127,0.94)',stroke:'rgba(200,100,230,1)', r:12},
+};
+
+async function drawCityShindo(pts){
+  if(!mapOk||!mSvg||!mProj)return;
+  mSvg.selectAll('.shindo-city').remove();
+  // addr별 최대 진도 집계 (진도4↑만)
+  const addrMax={};
+  pts.forEach(r=>{
+    if(!r.addr||!r.scale||r.scale<40)return;
+    if(!addrMax[r.addr]||r.scale>addrMax[r.addr])addrMax[r.addr]=r.scale;
+  });
+  if(!Object.keys(addrMax).length)return;
+  const el=document.getElementById('japan-map');
+  const W=el?el.clientWidth||700:700,H=el?el.clientHeight||600:600;
+  const entries=Object.entries(addrMax);
+  // 병렬로 좌표 조회 (캐시 우선)
+  const coords=await Promise.all(entries.map(([addr])=>fetchCityCoord(addr)));
+  // 낮은 진도부터 그려서 높은 진도가 위에
+  entries.map(([addr,scale],i)=>({addr,scale,coord:coords[i]}))
+    .filter(e=>e.coord)
+    .sort((a,b)=>a.scale-b.scale)
+    .forEach(({scale,coord})=>{
+      const[x,y]=mProj(coord);
+      if(x<-10||x>W+10||y<-10||y>H+10)return;
+      const sk=([70,60,55,50,45,40]).find(k=>scale>=k)||40;
+      const st=CITY_SHINDO_STYLE[sk];
+      const g=mSvg.append('g').attr('class','shindo-city');
+      g.append('circle')
+        .attr('cx',x).attr('cy',y).attr('r',st.r)
+        .attr('fill',st.fill).attr('stroke',st.stroke).attr('stroke-width',1.0);
+      if(scale>=45){
+        g.append('text')
+          .attr('x',x).attr('y',y+0.5)
+          .attr('text-anchor','middle').attr('dominant-baseline','middle')
+          .attr('fill','#fff').attr('font-family','Bebas Neue,sans-serif')
+          .attr('font-size','7px').attr('font-weight','700')
+          .attr('pointer-events','none')
+          .text(SM[String(scale)]||'—');
+      }
+    });
+}
+
 function drawEpi(qs){
   if(!mapOk||!mSvg||!mProj)return;
   mSvg.selectAll('.epi,.ering').remove();
@@ -1253,10 +1320,11 @@ async function loadData(){
       if(typeof regionRAF!=='undefined'&&regionRAF)cancelAnimationFrame(regionRAF);
       const _ri=document.getElementById('region-list');
       if(_ri)_ri.innerHTML='';
-      if(mSvg)mSvg.selectAll('.shindo-region').remove();
+      if(mSvg){mSvg.selectAll('.shindo-region').remove();mSvg.selectAll('.shindo-city').remove();}
     }
     if(pts.length){
       drawShindoMap(pts);
+      drawCityShindo(pts);
       const CITY_TO_PREF={
         '横浜':'가나가와현','横須賀':'가나가와현','鎌倉':'가나가와현','藤沢':'가나가와현',
         '茅ヶ崎':'가나가와현','三浦':'가나가와현','大和':'가나가와현','海老名':'가나가와현',
