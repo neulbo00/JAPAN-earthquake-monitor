@@ -273,6 +273,13 @@ body::before{content:'';position:fixed;inset:0;
 .ast-empty{font-family:var(--font-m);font-size:13px;color:var(--text2);padding:6px 2px;}
 .ast-hint{font-family:var(--font-m);font-size:11px;color:rgba(122,154,176,0.65);margin-top:auto;padding-top:4px;}
 
+/* ── Task 1-2: 네트워크 상태 배지 ── */
+#source-status{position:fixed;bottom:6px;left:6px;font-size:10px;opacity:0.55;z-index:999;display:flex;gap:8px;font-family:monospace;pointer-events:none;}
+.src-badge{padding:1px 5px;border-radius:3px;}
+.src-badge.ok  {color:#4ade80;}
+.src-badge.warn{color:#fbbf24;}
+.src-badge.fail{color:#ef4444;}
+
 /* ══ EEW 긴급지진속보 배너 ══ */
 .eew-banner{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:1002;pointer-events:none;text-align:center;min-width:820px;}
 .eew-banner.active{display:block;animation:eewIn 0.3s ease-out;}
@@ -1089,6 +1096,17 @@ let tickerItems=[];       // 실제 렌더링 배열 (지진+뉴스 합산)
 let tickerPos=0;          // 현재 스크롤 위치
 let tickerRAF=null;       // requestAnimationFrame ID
 let tickerSpeed=0.5;      // px/frame
+
+// ── Task 1-1: Watchdog ──────────────────────────────────────────
+const sourceLastSuccess={p2p:Date.now(),tsunami:Date.now(),eew:Date.now(),news:Date.now()};
+const WATCHDOG_TIMEOUT=180000;       // 3분 — 모든 소스 동시 실패 기준
+const WATCHDOG_CHECK_INTERVAL=30000; // 30초마다 체크
+function markFetchSuccess(source){sourceLastSuccess[source]=Date.now();}
+setInterval(()=>{
+  const now=Date.now();
+  const allFailed=Object.values(sourceLastSuccess).every(ts=>(now-ts)>WATCHDOG_TIMEOUT);
+  if(allFailed){console.warn('[Watchdog] 모든 소스 3분+ 무응답 → 자동 리로드');location.reload();}
+},WATCHDOG_CHECK_INTERVAL);
 let cachedStatsData = null;
 let lastStatsFetchTime = 0;
 
@@ -1193,6 +1211,7 @@ function showEEW(item){
 async function checkEEW(){
   try{
     const data=await fetch('https://api.p2pquake.net/v2/history?codes=554&limit=1').then(r=>r.json());
+    markFetchSuccess('eew');
     if(!data?.length){return;}
     const item=data[0];
     if(item.cancelled){hideEEW();eewEventId=item.id||item.time;return;}
@@ -1210,6 +1229,7 @@ let tsunamiActive=false;
 async function checkTsunami(){
   try{
     const d=await fetch('https://api.p2pquake.net/v2/history?codes=552&limit=1').then(r=>r.json());
+    markFetchSuccess('tsunami');
     const tb=document.getElementById('tsunami-banner');
     if(!d?.length){if(tsunamiActive){tsunamiActive=false;tb.classList.remove('active');}return;}
     const item=d[0];
@@ -1302,6 +1322,7 @@ async function loadData(){
   try{
     const _raw=await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=20').then(r=>r.json());
     if(!_raw?.length)return;
+    markFetchSuccess('p2p');
     // P2PQuake 중복 제거: 동일 지진 초보·수정·진도 3~4건 → 발생시각(분) 기준 최우선 1건
     const _dm=new Map();
     _raw.forEach(q=>{
