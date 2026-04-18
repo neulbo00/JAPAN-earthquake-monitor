@@ -273,6 +273,17 @@ body::before{content:'';position:fixed;inset:0;
 .ast-empty{font-family:var(--font-m);font-size:13px;color:var(--text2);padding:6px 2px;}
 .ast-hint{font-family:var(--font-m);font-size:11px;color:rgba(122,154,176,0.65);margin-top:auto;padding-top:4px;}
 
+/* ══ EEW 긴급지진속보 배너 ══ */
+.eew-banner{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:1002;pointer-events:none;text-align:center;min-width:820px;}
+.eew-banner.active{display:block;animation:eewIn 0.3s ease-out;}
+@keyframes eewIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.eew-inner{background:rgba(12,8,0,0.93);border:3px solid #ffaa00;border-radius:8px;padding:14px 44px;box-shadow:0 0 40px rgba(255,170,0,0.5);animation:eewPulse 0.8s ease-in-out infinite alternate;}
+@keyframes eewPulse{0%{border-color:rgba(255,170,0,0.5);box-shadow:0 0 18px rgba(255,170,0,0.3)}100%{border-color:#ffcc00;box-shadow:0 0 50px rgba(255,200,0,0.7)}}
+.eew-tag{font-family:var(--font-m);font-size:13px;color:#ffaa00;letter-spacing:4px;margin-bottom:4px;}
+.eew-main{font-family:var(--font-d);font-size:68px;color:#ffdd00;text-shadow:0 0 30px rgba(255,220,0,0.8);line-height:1;}
+.eew-sub{font-family:var(--font-m);font-size:22px;color:#fff;letter-spacing:3px;margin-top:4px;}
+.eew-note{font-family:var(--font-m);font-size:11px;color:rgba(255,200,0,0.65);margin-top:6px;letter-spacing:2px;}
+
 /* ══ 화산 경보 패널 ══ */
 .volcano-panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;flex-shrink:0;overflow:hidden;}
 .volcano-panel .panel-hd{border-bottom:1px solid var(--border);padding:8px 14px;}
@@ -295,6 +306,14 @@ body::before{content:'';position:fixed;inset:0;
 <div class="alert-banner" id="alert-banner">
   <div class="alert-banner-text" id="alert-banner-text">강진 경보</div>
   <div class="alert-banner-sub" id="alert-banner-sub">—</div>
+</div>
+<div class="eew-banner" id="eew-banner">
+  <div class="eew-inner">
+    <div class="eew-tag">⚡ 긴급지진속보 (EEW) — 예측값</div>
+    <div class="eew-main" id="eew-scale">—</div>
+    <div class="eew-sub" id="eew-loc">—</div>
+    <div class="eew-note">실제 진도와 다를 수 있습니다 · 확정 데이터로 자동 전환됩니다</div>
+  </div>
 </div>
 <div class="tts-subtitle" id="tts-subtitle">
   <div class="sub-kr" id="sub-kr">—</div>
@@ -653,6 +672,55 @@ async function loadWx(lat,lon,name){
 
 // 지도
 let mapOk=false,mSvg,mProj;
+let mapViewBox=null,mapZoomTimer=null,mapZoomRAF=null;
+
+function animateViewBox(from,to,duration){
+  if(mapZoomRAF)cancelAnimationFrame(mapZoomRAF);
+  const start=performance.now();
+  function frame(now){
+    const t=Math.min(1,(now-start)/duration);
+    const e=t<0.5?2*t*t:-1+(4-2*t)*t; // easeInOut
+    const vb=from.map((a,i)=>a+(to[i]-a)*e);
+    mSvg.attr('viewBox',vb.join(' '));
+    if(t<1)mapZoomRAF=requestAnimationFrame(frame);
+    else mapZoomRAF=null;
+  }
+  mapZoomRAF=requestAnimationFrame(frame);
+}
+
+function getZoomFactor(sc){
+  if(sc==='7') return 5;
+  if(sc==='6강'||sc==='6약') return 4;
+  if(sc==='5강'||sc==='5약') return 3;
+  if(sc==='4') return 2.2;
+  return 0; // 줌 안 함
+}
+
+function zoomMapToEpicenter(lon,lat,sc){
+  if(!mapOk||!mSvg||!mProj)return;
+  const factor=getZoomFactor(sc);
+  if(factor<=0)return;
+  const [cx,cy]=mProj([lon,lat]);
+  const el=document.getElementById('japan-map');
+  const W=el.clientWidth||700,H=el.clientHeight||600;
+  const vw=W/factor,vh=H/factor;
+  const vx=Math.max(0,Math.min(W-vw,cx-vw/2));
+  const vy=Math.max(0,Math.min(H-vh,cy-vh/2));
+  const to=[vx,vy,vw,vh];
+  animateViewBox(mapViewBox||[0,0,W,H],to,1200);
+  mapViewBox=to;
+  if(mapZoomTimer)clearTimeout(mapZoomTimer);
+  mapZoomTimer=setTimeout(resetMapZoom,300000); // 5분 후 전체 뷰 복귀
+}
+
+function resetMapZoom(){
+  if(!mapOk||!mSvg)return;
+  const el=document.getElementById('japan-map');
+  const W=el.clientWidth||700,H=el.clientHeight||600;
+  const to=[0,0,W,H];
+  animateViewBox(mapViewBox||to,to,1500);
+  mapViewBox=to;
+}
 async function initMap(){
   try{
     const tp=await d3.json('https://cdn.jsdelivr.net/npm/datamaps@0.5.10/src/js/data/jpn.topo.json');
@@ -664,6 +732,7 @@ async function initMap(){
       .attr('class','land').attr('d',d3.geoPath(mProj))
       .attr('fill','#0d1a24').attr('stroke','rgba(0,180,255,0.25)').attr('stroke-width','0.7');
     mapOk=true;
+    mapViewBox=[0,0,W,H]; // 초기 viewBox 저장
     drawHistorical(); // 과거 진도7 지진 표시
     drawNankai();     // 난카이 트로프
   }catch(e){console.error('지도 실패',e);}
@@ -822,7 +891,7 @@ function drawShindoMap(pts){
     const coord=PREF_COORDS[pref];
     if(!coord)return;
     const [x,y]=mProj(coord);
-    if(x<0||x>W||y<0||y>H)return;
+    if(x<-60||x>W+60||y<-60||y>H+60)return;
     // scale을 10단위로 내림해서 스타일 조회
     const sk=([70,60,55,50,45,40]).find(k=>scale>=k)||40;
     const st=SHINDO_STYLE[sk];
@@ -981,33 +1050,6 @@ async function fetchBroadcastSettings(){
   }catch(e){ console.log('[BcastSettings] 서버 미연결, 기본값 사용'); }
 }
 
-// ─── 뉴스 티커 ─────────────────────────────────────────────────
-async function fetchQuakeNews(){
-  try{
-    const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),8000);
-    const r=await fetch('http://localhost:8765/quake-news',{signal:ctrl.signal});
-    clearTimeout(tid);
-    const d=await r.json();
-    if(d.ok&&Array.isArray(d.items)&&d.items.length>0){
-      newsItems=d.items.map(n=>{
-        const src=n.source?' ['+n.source+']':'';
-        return '<span class="ticker-item news"><span class="ntag">NEWS</span><em>'+n.title+'</em> &#9658; '+n.summary+src+'</span>';
-      });
-      tickerItems=[...quakeTickerItems,...newsItems];
-      initTicker();
-      console.log('[QuakeNews]',newsItems.length,'건 반영');
-    }
-  }catch(e){console.warn('[QuakeNews]',e.message);}
-}
-function buildTicker(qs){
-  const items=qs.slice(0,10).map(q=>{
-    const h=q.earthquake?.hypocenter;if(!h)return null;
-    const sc=q.earthquake?.maxScale?SM[String(q.earthquake.maxScale)]:'';
-    return `<span class="ticker-item">${jst(q.time)} · <span>${locKr(h.name||'불명')}</span> · M${(h.magnitude||0).toFixed(1)} · 심도 ${h.depth||'—'}km${sc?' · 최대진도 '+sc:''}</span>`;
-  }).filter(Boolean);
-  document.getElementById('ticker-inner').innerHTML=items.join('')+items.join('');
-}
 
 // PIP 진원지 확대 미니맵
 let pipTopo=null;
@@ -1095,8 +1137,72 @@ function buildTicker(qs){
     const sc=q.earthquake?.maxScale?SM[String(q.earthquake.maxScale)]:'';
     return `<span class="ticker-item">${jst(q.time)} · <span>${locKr(h.name||'불명')}</span> · M${(h.magnitude||0).toFixed(1)} · 심도 ${h.depth||'—'}km${sc?' · 최대진도 '+sc:''}</span>`;
   }).filter(Boolean);
-  tickerItems=items;
+  quakeTickerItems=items;
+  tickerItems=[...quakeTickerItems,...newsItems];
   initTicker();
+}
+
+// ══ EEW 긴급지진속보 ══
+let eewEventId=null,eewActive=false,eewHideTimer=null;
+
+function hideEEW(){
+  eewActive=false;
+  document.getElementById('eew-banner')?.classList.remove('active');
+}
+
+function showEEW(item){
+  const eq=item.earthquake,h=eq?.hypocenter;
+  const sc=eq?.maxScale&&eq.maxScale>0?(SM[String(eq.maxScale)]||'불명'):'불명';
+  const mag=h?.magnitude?h.magnitude.toFixed(1):'—';
+  const loc=h?.name?locKr(h.name):'진원지 분석 중';
+
+  document.getElementById('eew-scale').textContent=sc==='불명'?'진도 분석 중':('최대진도 '+sc+' 예측');
+  document.getElementById('eew-loc').textContent=`${loc}  M${mag} (예측)`;
+  document.getElementById('eew-banner').classList.add('active');
+  eewActive=true;
+
+  const ALERT_SC=buildScaleSet(BCAST.alertShindo);
+  const TTS_SC=buildScaleSet(BCAST.ttsShindo);
+  const NUCLEAR_SC={'5약':true,'5강':true,'6약':true,'6강':true,'7':true};
+  const magNum=parseFloat(mag);
+
+  if(ALERT_SC[sc]||magNum>=BCAST.alertMag){
+    // 경보 오버레이 (EEW 예측 표시)
+    const ov=document.getElementById('alert-overlay');
+    const bn=document.getElementById('alert-banner');
+    document.getElementById('alert-banner-text').textContent='⚡ EEW 속보';
+    document.getElementById('alert-banner-sub').textContent=`${loc}  최대진도 ${sc} 예측`;
+    ov.classList.add('active');bn.classList.add('active');
+    setTimeout(()=>{ov.classList.remove('active');bn.classList.remove('active');},8000);
+    playAlertSound('critical');
+    const krText=`긴급지진속보. ${loc}, 최대진도 ${sc} 예측. 규모 ${mag} 예측.`;
+    const jpText=`緊急地震速報。${loc}、最大震度${sc}予測。マグニチュード${mag}予測。`;
+    speakAndSubtitle(krText,jpText,'critical',sc);
+  } else if(TTS_SC[sc]){
+    const krText=`지진속보. ${loc}, 진도 ${sc} 예측.`;
+    const jpText=`地震速報。${loc}、震度${sc}予測。`;
+    speakAndSubtitle(krText,jpText,'warning',sc);
+  }
+
+  if(NUCLEAR_SC[sc]&&h?.latitude&&h?.longitude) showNuclearInfo(h.latitude,h.longitude);
+
+  if(eewHideTimer)clearTimeout(eewHideTimer);
+  eewHideTimer=setTimeout(hideEEW,180000); // 3분 후 자동 숨김
+}
+
+async function checkEEW(){
+  try{
+    const data=await fetch('https://api.p2pquake.net/v2/history?codes=554&limit=1').then(r=>r.json());
+    if(!data?.length){return;}
+    const item=data[0];
+    if(item.cancelled){hideEEW();eewEventId=item.id||item.time;return;}
+    // 3분 초과 EEW 무시
+    if(Date.now()-new Date(item.time)>180000){if(eewActive)hideEEW();return;}
+    const evId=item.id||item.time;
+    if(evId===eewEventId)return; // 이미 처리한 이벤트
+    eewEventId=evId;
+    showEEW(item);
+  }catch(e){}
 }
 
 // 쓰나미 체크
@@ -1107,7 +1213,7 @@ async function checkTsunami(){
     const tb=document.getElementById('tsunami-banner');
     if(!d?.length){if(tsunamiActive){tsunamiActive=false;tb.classList.remove('active');}return;}
     const item=d[0];
-    if(item.cancelled===false&&(Date.now()-new Date(item.time))<6*3600*1000){
+    if(!item.cancelled&&(Date.now()-new Date(item.time))<6*3600*1000){
       tsunamiActive=true;tb.classList.add('active');
       const areas=(item.areas||[]).map(a=>a.name).join(' · ')||'해당 지역';
       document.getElementById('tsunami-title').textContent='🌊 쓰나미 경보 발령 중';
@@ -1232,7 +1338,9 @@ async function loadData(){
     const WARN_SCALES=buildScaleSet(Math.max(1,BCAST.alertShindo-1));
     const TTS_SCALES=buildScaleSet(BCAST.ttsShindo);
     const isAlert=magNum>=BCAST.alertMag||ALERT_SCALES[sc];
-    const isTTS=TTS_SCALES[sc]||magNum>=BCAST.ttsShindo;
+    const isTTS=TTS_SCALES[sc];
+    const NUCLEAR_SC={'5약':true,'5강':true,'6약':true,'6강':true,'7':true};
+    const isNuclear=NUCLEAR_SC[sc];
 
     // 기간별 건수 표시: 실시간 20건과 earthquakes.json 누적 데이터 병합
     if (!cachedStatsData || Date.now() - lastStatsFetchTime > 600000) {
@@ -1336,6 +1444,7 @@ async function loadData(){
     if(pts.length){
       drawShindoMap(pts);
       drawCityShindo(pts);
+      if(isNewEq&&h?.longitude&&h?.latitude) zoomMapToEpicenter(h.longitude,h.latitude,sc);
       const CITY_TO_PREF={
         '横浜':'가나가와현','横須賀':'가나가와현','鎌倉':'가나가와현','藤沢':'가나가와현',
         '茅ヶ崎':'가나가와현','三浦':'가나가와현','大和':'가나가와현','海老名':'가나가와현',
@@ -1411,30 +1520,17 @@ async function loadData(){
       rp.classList.add('alert-region');
       if(regionAlertTimer)clearTimeout(regionAlertTimer);
       regionAlertTimer=setTimeout(()=>rp.classList.remove('alert-region'),3600000);
-      if(audioCtx)triggerAlert(magNum>=6.5?'critical':'warning',locKr(h?.name||'불명'),mag,sc,jst(data[0].time));
+      triggerAlert(magNum>=6.5?'critical':'warning',locKr(h?.name||'불명'),mag,sc,jst(data[0].time));
       positionSubtitle(h?.latitude);
-      if(h?.latitude&&h?.longitude)showNuclearInfo(h.latitude,h.longitude);
+      fetchQuakeNews();
     } else if(isNewEq&&isTTS){
-      if(audioCtx&&window.speechSynthesis){
-        const krText=`지진 발생. ${jst(data[0].time)}. ${locKr(h?.name||'불명')}, 진도 ${sc}, 규모 ${mag}.`;
-        const jpText=`地震発生。${jst(data[0].time)}。${locKr(h?.name||'불명')}、震度${sc}、マグニチュード${mag}。`;
-        setTimeout(()=>{
-          const sub=document.getElementById('tts-subtitle');
-          document.getElementById('sub-kr').textContent=krText;
-          document.getElementById('sub-jp').textContent=jpText;
-          document.getElementById('sub-count').textContent='';
-          sub.classList.add('active');
-          positionSubtitle(h?.latitude);
-          const u=new SpeechSynthesisUtterance(krText);u.lang='ko-KR';u.rate=0.9;
-          u.onend=()=>{
-            const u2=new SpeechSynthesisUtterance(jpText);u2.lang='ja-JP';u2.rate=0.9;
-            u2.onend=()=>{if(subtitleHideTimer)clearTimeout(subtitleHideTimer);subtitleHideTimer=setTimeout(()=>{sub.classList.remove('active');sub.classList.remove('pos-top');},getSubtitleDuration(sc));};
-            window.speechSynthesis.speak(u2);
-          };
-          window.speechSynthesis.speak(u);
-        },500);
-      }
+      const krText=`지진 발생. ${jst(data[0].time)}. ${locKr(h?.name||'불명')}, 진도 ${sc}, 규모 ${mag}.`;
+      const jpText=`地震発生。${jst(data[0].time)}。${locKr(h?.name||'불명')}、震度${sc}、マグニチュード${mag}。`;
+      positionSubtitle(h?.latitude);
+      speakAndSubtitle(krText,jpText,'warning',sc);
     }
+    // 원전 거리 표시 — 진도5↑ 독립 조건 (isAlert 여부 무관)
+    if(isNewEq&&isNuclear&&h?.latitude&&h?.longitude) showNuclearInfo(h.latitude,h.longitude);
 
     buildTicker(data);
     drawEpi(data.filter(d=>d.earthquake?.hypocenter?.latitude).slice(0,15));
@@ -1454,6 +1550,8 @@ async function loadData(){
   setInterval(loadVolcanoData,BCAST.tsunamiInterval*1000); // 쓰나미와 동일 주기
   fetchQuakeNews();
   setInterval(fetchQuakeNews,1800000); // 30분마다 뉴스 갱신
+  checkEEW();
+  setInterval(checkEEW,10000); // 10초마다 EEW 폴링
 })();
 const ss=document.createElement('style');
 ss.textContent='@keyframes epiRing{0%{r:9;opacity:.8;stroke-width:2}100%{r:30;opacity:0;stroke-width:.5}}';
@@ -1930,6 +2028,11 @@ document.addEventListener('click',()=>{
   if(audioStarted)return;
   audioStarted=true;initAudio();startBgMusic();
 },{once:false});
+
+document.getElementById('japan-map')?.addEventListener('dblclick',()=>{
+  if(mapZoomTimer){clearTimeout(mapZoomTimer);mapZoomTimer=null;}
+  resetMapZoom();
+});
 
 window.addEventListener('load',()=>{
   setTimeout(()=>{
