@@ -1837,14 +1837,25 @@ let wsQuakeBuffer = [];   // 현재 화면에 표시 중인 지진 데이터 배
 let p2pWs = null;
 let wsReconnectTimer = null;
 let wsConnected = false;
+let wsReconnectAttempts = 0; // Fix 2: Exponential Backoff 카운터
+const WS_BACKOFF_DELAYS = [15000,30000,60000,120000,300000]; // 15s→30s→1m→2m→5m
 
-/** P2PQuake raw 배열 → dedup/filter/sort 처리 후 배열 반환 */
+/** Fix 1: P2PQuake raw 배열 → dedup/filter/sort
+ *  중복 제거 기준: earthquake.time(초 단위) + 진원지 위치 조합
+ *  → 같은 지진의 여러 보고(초보/수정/확정)는 병합, 동시 다발 별개 지진은 보존 */
 function _processRawQuakes(raw){
   const _dm=new Map();
   raw.forEach(q=>{
-    const key=Math.floor(new Date(q.earthquake?.time||q.time||0).getTime()/60000);
+    // earthquake.time은 초 단위 문자열 "YYYY/MM/DD HH:MM:SS" — 같은 이벤트는 동일
+    const eqTime=q.earthquake?.time||q.time||'0';
+    // 진원지 0.3° 격자 키 추가 → 동일 시각 다른 위치 지진 구분
+    const lat=q.earthquake?.hypocenter?.latitude||0;
+    const lon=q.earthquake?.hypocenter?.longitude||0;
+    const locGrid=lat?`${Math.round(lat*3)}_${Math.round(lon*3)}`:'nocoord';
+    const key=`${eqTime}|${locGrid}`;
     const prev=_dm.get(key);
     if(!prev){_dm.set(key,q);return;}
+    // 같은 키: 좌표+진도 정보가 더 많은 보고(수정·확정)로 교체
     const sc2=x=>((x.earthquake?.hypocenter?.latitude||0)!==0?2:0)+((x.earthquake?.maxScale||0)>0?1:0);
     if(sc2(q)>sc2(prev))_dm.set(key,q);
   });
@@ -1865,9 +1876,11 @@ function connectP2PWebSocket(){
     p2pWs=new WebSocket('wss://api.p2pquake.net/v2/ws');
     p2pWs.onopen=()=>{
       wsConnected=true;
+      wsReconnectAttempts=0; // Fix 2: 연결 성공 시 카운터 리셋
       if(wsReconnectTimer){clearTimeout(wsReconnectTimer);wsReconnectTimer=null;}
       markFetchSuccess('p2p');
       console.log('[WS] P2PQuake 연결됨');
+      loadData(); // Fix 3: 연결 공백 동안 누락된 데이터 즉시 동기화
     };
     p2pWs.onmessage=async(e)=>{
       try{
@@ -1902,8 +1915,12 @@ function connectP2PWebSocket(){
   }
 }
 
-function scheduleWsReconnect(delay=15000){
+// Fix 2: Exponential Backoff 재연결
+function scheduleWsReconnect(){
   if(wsReconnectTimer)clearTimeout(wsReconnectTimer);
+  const delay=WS_BACKOFF_DELAYS[Math.min(wsReconnectAttempts,WS_BACKOFF_DELAYS.length-1)];
+  wsReconnectAttempts++;
+  console.log(`[WS] ${wsReconnectAttempts}번째 재연결 예약 (${delay/1000}s 후)`);
   wsReconnectTimer=setTimeout(()=>{wsReconnectTimer=null;connectP2PWebSocket();},delay);
 }
 
