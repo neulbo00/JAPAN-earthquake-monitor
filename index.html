@@ -1892,8 +1892,16 @@ function connectP2PWebSocket(){
           wsQuakeBuffer=_processRawQuakes(merged);
           await handleQuakeData(wsQuakeBuffer);
         }else if(code===554){
-          // EEW — 기존 checkEEW 즉시 트리거
-          checkEEW();
+          // EEW — WS 메시지 직접 처리 (REST 폴링 왕복 제거 → 즉시 표시)
+          if(msg.cancelled){hideEEW();eewEventId=msg.id||msg.time;}
+          else{
+            const evId=msg.id||msg.time;
+            if(evId!==eewEventId){
+              eewEventId=evId;
+              showEEW(msg);
+            }
+          }
+          markFetchSuccess('eew');
         }else if(code===552){
           // 쓰나미 — 즉시 갱신
           checkTsunami();
