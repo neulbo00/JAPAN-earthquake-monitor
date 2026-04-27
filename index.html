@@ -1393,10 +1393,18 @@ function showEEW(item){
 
 async function checkEEW(){
   try{
-    const data=await fetch('https://api.p2pquake.net/v2/history?codes=554&limit=1').then(r=>r.json());
+    // code=554(경보)+556(예보) 각각 조회 후 최신 것으로 처리
+    const [d554,d556]=await Promise.allSettled([
+      fetch('https://api.p2pquake.net/v2/history?codes=554&limit=1').then(r=>r.json()),
+      fetch('https://api.p2pquake.net/v2/history?codes=556&limit=1').then(r=>r.json()),
+    ]);
     markFetchSuccess('eew');
-    if(!data?.length){return;}
-    const item=data[0];
+    const candidates=[];
+    if(d554.status==='fulfilled'&&d554.value?.length)candidates.push(d554.value[0]);
+    if(d556.status==='fulfilled'&&d556.value?.length)candidates.push(d556.value[0]);
+    if(!candidates.length)return;
+    // 가장 최신 EEW 선택
+    const item=candidates.sort((a,b)=>new Date(b.time)-new Date(a.time))[0];
     if(item.cancelled){hideEEW();eewEventId=item.id||item.time;return;}
     // 3분 초과 EEW 무시
     if(Date.now()-new Date(item.time)>180000){if(eewActive)hideEEW();return;}
@@ -1891,8 +1899,8 @@ function connectP2PWebSocket(){
           const merged=[msg,...wsQuakeBuffer];
           wsQuakeBuffer=_processRawQuakes(merged);
           await handleQuakeData(wsQuakeBuffer);
-        }else if(code===554){
-          // EEW — WS 메시지 직접 처리 (REST 폴링 왕복 제거 → 즉시 표시)
+        }else if(code===554||code===556){
+          // EEW — WS 메시지 직접 처리 (code=554: 경보, code=556: 예보 둘 다 즉시 표시)
           if(msg.cancelled){hideEEW();eewEventId=msg.id||msg.time;}
           else{
             const evId=msg.id||msg.time;
