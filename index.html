@@ -1838,7 +1838,7 @@ let p2pWs = null;
 let wsReconnectTimer = null;
 let wsConnected = false;
 let wsReconnectAttempts = 0; // Fix 2: Exponential Backoff 카운터
-const WS_BACKOFF_DELAYS = [15000,30000,60000,120000,300000]; // 15s→30s→1m→2m→5m
+const WS_BACKOFF_DELAYS = [5000,10000,20000,30000,60000]; // 5s→10s→20s→30s→1m
 
 /** Fix 1: P2PQuake raw 배열 → dedup/filter/sort
  *  중복 제거 기준: earthquake.time(초 단위) + 진원지 위치 조합
@@ -1947,7 +1947,7 @@ async function loadData(){
   await loadData();
   await checkTsunami();
   connectP2PWebSocket();             // Task 2-1 Step 2: WebSocket 연결
-  setInterval(loadData,300000);      // Task 2-1 Step 3: 30s → 300s (WS가 실시간 수신)
+  setInterval(loadData,60000);       // WS 끊김 시 60초 폴백 (기존 300s)
   setInterval(checkTsunami,BCAST.tsunamiInterval*1000);
   setInterval(fetchBroadcastSettings,300000); // 5분마다 설정 재로드
   loadPlants();
