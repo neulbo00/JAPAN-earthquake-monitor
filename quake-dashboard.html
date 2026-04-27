@@ -1016,7 +1016,8 @@ async function runSearch() {
       if(dateFrom && dt < new Date(dateFrom)) return false;
       if(dateTo   && dt > new Date(dateTo+'T23:59:59')) return false;
       const sc=q.earthquake?.maxScale||0;
-      if(sc>0&&shindoMin>0&&sc<shindoMin) return false;
+      // 진도 필터 걸렸으면 maxScale 없는 지진은 제외 + 임계값 미만도 제외
+      if(shindoMin>0 && sc<shindoMin) return false;
       if(region && !(h.name||'').toLowerCase().includes(region)) return false;
       return true;
     });
