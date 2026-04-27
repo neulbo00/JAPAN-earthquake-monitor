@@ -484,14 +484,6 @@ input[type="range"]::-webkit-slider-thumb {
           <input type="date" id="f-date-to">
         </div>
         <div class="field">
-          <label>규모 (최소)</label>
-          <div class="range-row">
-            <input type="number" id="f-mag-min" value="0" min="0" max="10" step="0.1" style="width:80px;">
-            <span>~</span>
-            <input type="number" id="f-mag-max" value="10" min="0" max="10" step="0.1" style="width:80px;">
-          </div>
-        </div>
-        <div class="field">
           <label>최대 진도 (JMA)</label>
           <select id="f-shindo" class="custom-select">
             <option value="">전체</option>
@@ -1012,8 +1004,6 @@ async function runSearch() {
 
     const dateFrom = document.getElementById('f-date-from').value;
     const dateTo   = document.getElementById('f-date-to').value;
-    const magMin   = parseFloat(document.getElementById('f-mag-min').value)||0;
-    const magMax   = parseFloat(document.getElementById('f-mag-max').value)||10;
     const shindoMin= parseInt(document.getElementById('f-shindo').value)||0;
     const region   = document.getElementById('f-region').value.trim().toLowerCase();
 
@@ -1025,8 +1015,6 @@ async function runSearch() {
       const dt=new Date(t);
       if(dateFrom && dt < new Date(dateFrom)) return false;
       if(dateTo   && dt > new Date(dateTo+'T23:59:59')) return false;
-      const mag=h.magnitude||0;
-      if(mag<magMin||mag>magMax) return false;
       const sc=q.earthquake?.maxScale||0;
       if(sc>0&&shindoMin>0&&sc<shindoMin) return false;
       if(region && !(h.name||'').toLowerCase().includes(region)) return false;
@@ -1121,8 +1109,6 @@ function sortTable(key){
 // ── 필터 초기화 ──
 function resetFilter(){
   initDates();
-  document.getElementById('f-mag-min').value=0;
-  document.getElementById('f-mag-max').value=10;
   document.getElementById('f-shindo').value='';
   document.getElementById('f-region').value='';
   document.getElementById('f-limit').value=100;
@@ -1185,7 +1171,10 @@ function renderCharts(){
 
     drawMagChart(d100);
     drawHourChart(dRange);
-    drawDailyChart(raw);
+    // 일별 그래프는 30일치 전체 축적 데이터 사용 (raw는 100건 제한)
+    loadAccumulated().then(acc => {
+      drawDailyChart(acc && acc.length ? acc : raw);
+    }).catch(()=> drawDailyChart(raw));
     drawShindoChart(d100);
   });
 }
