@@ -1812,8 +1812,13 @@ async function handleQuakeData(data){
     setTimeout(startRegionScroll,500);
   }
 
-  // 경보 발동
-  if(isNewEq&&isAlert){
+  // 지진 발생 경과시간(분) 계산 — 3분 이내 지진만 실시간 팝업/음성 경보 발동 (과거 지진 업데이트 시 경보 재발동 방지)
+  const eqTimeMs=new Date(data[0].earthquake?.time||data[0].time||0).getTime();
+  const quakeAgeMinutes=eqTimeMs>0?(Date.now()-eqTimeMs)/60000:0;
+  const isRecentEq=quakeAgeMinutes>=-1&&quakeAgeMinutes<=3;
+
+  // 경보 발동 (신규 지진 + 경보 조건 + 3분 이내 최신 지진)
+  if(isNewEq&&isAlert&&isRecentEq){
     const ov=document.getElementById('alert-overlay');
     const bn=document.getElementById('alert-banner');
     ov.classList.add('active');bn.classList.add('active');
@@ -1827,14 +1832,14 @@ async function handleQuakeData(data){
     triggerAlert(magNum>=6.5?'critical':'warning',locKr(h?.name||'불명'),mag,sc,jst(data[0].time));
     positionSubtitle(h?.latitude);
     fetchQuakeNews();
-  } else if(isNewEq&&isTTS){
+  } else if(isNewEq&&isTTS&&isRecentEq){
     const krText=`지진 발생. ${jst(data[0].time)}. ${locKr(h?.name||'불명')}, 진도 ${sc}, 규모 ${mag}.`;
     const jpText=`地震発生。${jst(data[0].time)}。${locKr(h?.name||'불명')}、震度${sc}、マグニチュード${mag}。`;
     positionSubtitle(h?.latitude);
     speakAndSubtitle(krText,jpText,'warning',sc);
   }
-  // 원전 거리 표시 — 진도5↑ 독립 조건 (isAlert 여부 무관)
-  if(isNewEq&&isNuclear&&h?.latitude&&h?.longitude) showNuclearInfo(h.latitude,h.longitude);
+  // 원전 거리 표시 — 진도5↑ 독립 조건 (isAlert 여부 무관, 최신 지진일 때만)
+  if(isNewEq&&isNuclear&&isRecentEq&&h?.latitude&&h?.longitude) showNuclearInfo(h.latitude,h.longitude);
 
   buildTicker(displayData); // Task 2-3: 필터 적용 데이터로 ticker
   drawEpi(data.filter(d=>d.earthquake?.hypocenter?.latitude).slice(0,15)); // epi: 필터 무관 전체
