@@ -770,7 +770,7 @@ async function initMap(){
 }
 
 // ── 과거 진도 7 이상 지진 상시 표시 ──
-const HISTORICAL_M7=[
+let HISTORICAL_M7=[
   {year:2026,name:'구마모토 지진',       mag:7.1,lat:32.60,lon:130.70,desc:'구마모토현 우키시·히카와초 진도7, 쓰나미주의보 발령'},
   {year:2024,name:'노토반도 지진',      mag:7.6,lat:37.49,lon:137.27,desc:'이시카와현 직격, 대규모 화재 및 지반 융기'},
   {year:2018,name:'홋카이도 이부리 동부',mag:6.7,lat:42.69,lon:141.93,desc:'홋카이도 전역 블랙아웃, 대규모 산사태'},
@@ -778,6 +778,17 @@ const HISTORICAL_M7=[
   {year:2011,name:'동일본 대지진',       mag:9.0,lat:38.10,lon:142.86,desc:'관측사상 최대, 거대 쓰나미 및 원전사고'},
   {year:1995,name:'한신·아와지 대지진',  mag:7.3,lat:34.59,lon:135.04,desc:'고베 직격, 6,434명 사망'},
 ];
+try {
+  const savedM7 = localStorage.getItem('HISTORICAL_M7');
+  if (savedM7) {
+    const parsed = JSON.parse(savedM7);
+    parsed.forEach(p => {
+      if (!HISTORICAL_M7.find(h => h.year === p.year && h.name === p.name)) {
+        HISTORICAL_M7.unshift(p); // 최신 지진이 맨 위에 오도록
+      }
+    });
+  }
+} catch(e) { console.error("Error loading HISTORICAL_M7 from localStorage", e); }
 
 // ── 난카이 트로프 (南海トラフ) ──
 const NANKAI_COORDS=[
@@ -1837,6 +1848,27 @@ async function handleQuakeData(data){
     const jpText=`地震発生。${jst(data[0].time)}。${locKr(h?.name||'불명')}、震度${sc}、マグニチュード${mag}。`;
     positionSubtitle(h?.latitude);
     speakAndSubtitle(krText,jpText,'warning',sc);
+  }
+
+  // 진도 7 지진 자동 기록 (새로운 지진이고, 진도 7인 경우)
+  if (isNewEq && sc === '7') {
+    const eqYear = new Date(eqTimeMs || Date.now()).getFullYear();
+    const newM7 = {
+      year: eqYear,
+      name: locKr(h?.name || '불명') + ' 지진',
+      mag: magNum || 7.0,
+      lat: h?.latitude || 35.0,
+      lon: h?.longitude || 135.0,
+      desc: `최대 진도 7, 규모 ${mag}`
+    };
+    if (!HISTORICAL_M7.find(x => x.year === newM7.year && x.name === newM7.name)) {
+      HISTORICAL_M7.unshift(newM7);
+      try {
+        localStorage.setItem('HISTORICAL_M7', JSON.stringify(HISTORICAL_M7));
+      } catch (e) { console.error(e); }
+      // 화면 갱신
+      drawHistoricalM7();
+    }
   }
   // 원전 거리 표시 — 진도5↑ 독립 조건 (isAlert 여부 무관, 최신 지진일 때만)
   if(isNewEq&&isNuclear&&isRecentEq&&h?.latitude&&h?.longitude) showNuclearInfo(h.latitude,h.longitude);
