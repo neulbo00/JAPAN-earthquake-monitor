@@ -1168,7 +1168,10 @@ async function drawPip(lat,lon,locName){
 
 
 
-let prevId=null;
+// 지진 이벤트는 보고서 ID가 아닌 실제 발생 시각 기준으로 추적한다.
+let prevQuakeEventKey=null;
+let prevQuakeEventState={alert:false,tts:false,nuclear:false,m7:false};
+let quakeEventsInitialized=false;
 let regionAlertTimer=null;
 let subtitleHideTimer=null;  // 자막 1시간 타이머
 let nuclearHideTimer=null;  // 원전 정보 1시간 타이머
@@ -1405,26 +1408,29 @@ function showEEW(item){
 
 async function checkEEW(){
   try{
-    // code=554(경보)+556(예보) 각각 조회 후 최신 것으로 처리
-    const [d554,d556]=await Promise.allSettled([
-      fetch('https://api.p2pquake.net/v2/history?codes=554&limit=1').then(r=>r.json()),
-      fetch('https://api.p2pquake.net/v2/history?codes=556&limit=1').then(r=>r.json()),
-    ]);
+    // 554는 발표 감지 정보뿐이므로, EEW 본문이 있는 556만 조회한다.
+    const r=await fetch('https://api.p2pquake.net/v2/history?codes=556&limit=1');
+    if(!r.ok)throw new Error('EEW history '+r.status);
+    const d=await r.json();
     markFetchSuccess('eew');
-    const candidates=[];
-    if(d554.status==='fulfilled'&&d554.value?.length)candidates.push(d554.value[0]);
-    if(d556.status==='fulfilled'&&d556.value?.length)candidates.push(d556.value[0]);
-    if(!candidates.length)return;
-    // 가장 최신 EEW 선택
-    const item=candidates.sort((a,b)=>new Date(b.time)-new Date(a.time))[0];
+    if(!Array.isArray(d)||!d.length)return;
+    const item=d[0];
     if(item.cancelled){hideEEW();eewEventId=item.id||item.time;return;}
     // 3분 초과 EEW 무시
-    if(Date.now()-new Date(item.time)>180000){if(eewActive)hideEEW();return;}
+    const ageMs=Date.now()-new Date(item.time).getTime();
+    if(!Number.isFinite(ageMs)||ageMs>180000){
+      // REST 응답이 WS로 받은 최신 속보보다 오래된 경우, 현재 속보를 지우지 않는다.
+      if(eewActive&&(item.id||item.time)===eewEventId)hideEEW();
+      return;
+    }
     const evId=item.id||item.time;
     if(evId===eewEventId)return; // 이미 처리한 이벤트
     eewEventId=evId;
     showEEW(item);
-  }catch(e){}
+  }catch(e){
+    console.warn('[EEW] 폴링 실패',e);
+    updateSourceStatus('eew','warn');
+  }
 }
 
 // ── Task 2-4: 쓰나미 ETA 테이블 ──
@@ -1466,8 +1472,8 @@ function renderTsunamiETA(item){
     const gradeKr=TSU_GRADE_MAP[a.grade]||a.grade||'—';
     const gradeCls=a.grade==='MajorWarning'?'tsu-grade-major':a.grade==='Warning'?'tsu-grade-warn':'tsu-grade-watch';
     const areaKr=_locTsuArea(a.name);
-    const arrival=a.arrivalTime||null;
-    const immediate=!!a.immediate;
+    const arrival=a.firstHeight?.arrivalTime||a.arrivalTime||null;
+    const immediate=!!a.immediate||/ただちに津波来襲|津波到達中と推測/.test(a.firstHeight?.condition||'');
     const timeStr=immediate?'즉시':(arrival||'—');
     return `<div class="tsu-eta-item">
       <span class="tsu-eta-grade ${gradeCls}">${gradeKr}</span>
@@ -1477,28 +1483,48 @@ function renderTsunamiETA(item){
   }).join('');
 }
 
-// 쓰나미 체크
+// 쓰나미 데이터 공통 렌더러: WebSocket과 REST가 같은 처리 경로를 사용한다.
 let tsunamiActive=false;
+let lastTsunamiMessageId=null;
+let lastTsunamiMessageTime=0;
+function applyTsunamiData(item){
+  // WSの重複・順序逆転したメッセージで、解除済みの津波情報を復活させない。
+  if(item){
+    const messageTime=new Date(item.time||0).getTime();
+    const messageId=item.id||item.time||null;
+    if(messageId&&messageId===lastTsunamiMessageId)return;
+    if(Number.isFinite(messageTime)&&messageTime>0&&messageTime<lastTsunamiMessageTime)return;
+    if(messageId)lastTsunamiMessageId=messageId;
+    if(Number.isFinite(messageTime)&&messageTime>0)lastTsunamiMessageTime=Math.max(lastTsunamiMessageTime,messageTime);
+  }
+  const tb=document.getElementById('tsunami-banner');
+  if(!tb)return;
+  const issuedAt=item?.time?new Date(item.time).getTime():NaN;
+  const isFresh=Number.isFinite(issuedAt)&&(Date.now()-issuedAt)<6*3600*1000;
+  if(!item||item.cancelled||!isFresh){
+    tsunamiActive=false;
+    tb.classList.remove('active');
+    const c=document.getElementById('tsunami-eta-container');
+    if(c)c.innerHTML='';
+    return;
+  }
+  tsunamiActive=true;
+  tb.classList.add('active');
+  const areas=(item.areas||[]).map(a=>a.name).join(' · ')||'해당 지역';
+  document.getElementById('tsunami-title').textContent='🌊 쓰나미 경보 발령 중';
+  document.getElementById('tsunami-detail').textContent=areas+' · 즉시 대피';
+  renderTsunamiETA(item); // Task 2-4: ETA 테이블 렌더
+}
 async function checkTsunami(){
   try{
-    const d=await fetch('https://api.p2pquake.net/v2/history?codes=552&limit=1').then(r=>r.json());
+    const r=await fetch('https://api.p2pquake.net/v2/history?codes=552&limit=1');
+    if(!r.ok)throw new Error('Tsunami history '+r.status);
+    const d=await r.json();
     markFetchSuccess('tsunami');
-    const tb=document.getElementById('tsunami-banner');
-    if(!d?.length){if(tsunamiActive){tsunamiActive=false;tb.classList.remove('active');}return;}
-    const item=d[0];
-    if(!item.cancelled&&(Date.now()-new Date(item.time))<6*3600*1000){
-      tsunamiActive=true;tb.classList.add('active');
-      const areas=(item.areas||[]).map(a=>a.name).join(' · ')||'해당 지역';
-      document.getElementById('tsunami-title').textContent='🌊 쓰나미 경보 발령 중';
-      document.getElementById('tsunami-detail').textContent=areas+' · 즉시 대피';
-      renderTsunamiETA(item); // Task 2-4: ETA 테이블 렌더
-    } else {
-      tsunamiActive=false;
-      tb.classList.remove('active');
-      const c=document.getElementById('tsunami-eta-container');
-      if(c)c.innerHTML='';
-    }
-  }catch(e){}
+    applyTsunamiData(Array.isArray(d)&&d.length?d[0]:null);
+  }catch(e){
+    console.warn('[Tsunami] 폴링 실패',e);
+  }
 }
 
 // 지역별 최대진도 스크롤
@@ -1634,14 +1660,15 @@ async function fetchP2PWithFallback(){
 async function handleQuakeData(data){
   if(!data?.length)return;
 
-  if(prevId&&prevId!==data[0].id){
+  const eq=data[0].earthquake,h=eq?.hypocenter;
+  const eventOriginTime=eq?.time||data[0].time||'';
+  const currentEventKey=String(eventOriginTime||data[0].id||'');
+  const isInitialQuakeSnapshot=!quakeEventsInitialized;
+  const isNewEq=!isInitialQuakeSnapshot&&prevQuakeEventKey!==currentEventKey;
+  if(isNewEq){
     const fl=document.getElementById('flash');
     fl.classList.remove('on');void fl.offsetWidth;fl.classList.add('on');
   }
-  const isNewEq=prevId!==null&&prevId!==data[0].id;
-  prevId=data[0].id;
-
-  const eq=data[0].earthquake,h=eq?.hypocenter;
   const mag=h?.magnitude?h.magnitude.toFixed(1):'—';
   const sc=eq?.maxScale?(SM[String(eq.maxScale)]||'—'):'—';
   const magNum=parseFloat(mag);
@@ -1654,6 +1681,16 @@ async function handleQuakeData(data){
   const isTTS=TTS_SCALES[sc];
   const NUCLEAR_SC={'5약':true,'5강':true,'6약':true,'6강':true,'7':true};
   const isNuclear=NUCLEAR_SC[sc];
+
+  // 최초 로드는 현재 상태를 기준값으로 삼아 과거 지진 경보가 재생되지 않도록 한다.
+  // 동일 발생 시각의 후속 수정 보고는 새 지진이 아닌 같은 이벤트의 갱신으로 처리한다.
+  if(isInitialQuakeSnapshot||isNewEq){
+    prevQuakeEventKey=currentEventKey;
+    prevQuakeEventState=isInitialQuakeSnapshot
+      ?{alert:isAlert,tts:isTTS||isAlert,nuclear:isNuclear,m7:sc==='7'}
+      :{alert:false,tts:false,nuclear:false,m7:false};
+    quakeEventsInitialized=true;
+  }
 
   // 기간별 건수 표시: 실시간 20건과 earthquakes.json 누적 데이터 병합
   if (!cachedStatsData || Date.now() - lastStatsFetchTime > 600000) {
@@ -1827,9 +1864,15 @@ async function handleQuakeData(data){
   const eqTimeMs=new Date(data[0].earthquake?.time||data[0].time||0).getTime();
   const quakeAgeMinutes=eqTimeMs>0?(Date.now()-eqTimeMs)/60000:0;
   const isRecentEq=quakeAgeMinutes>=-1&&quakeAgeMinutes<=3;
+  const shouldAlert=isRecentEq&&isAlert&&!prevQuakeEventState.alert;
+  const shouldTTS=isRecentEq&&!shouldAlert&&isTTS&&!prevQuakeEventState.tts;
+  const shouldNuclear=isRecentEq&&isNuclear&&!prevQuakeEventState.nuclear;
+  if(shouldAlert){prevQuakeEventState.alert=true;prevQuakeEventState.tts=true;}
+  else if(shouldTTS)prevQuakeEventState.tts=true;
+  if(shouldNuclear)prevQuakeEventState.nuclear=true;
 
-  // 경보 발동 (신규 지진 + 경보 조건 + 3분 이내 최신 지진)
-  if(isNewEq&&isAlert&&isRecentEq){
+  // 새 이벤트 또는 후속 수정으로 경보 단계가 처음 충족됐을 때만 알림
+  if(shouldAlert){
     const ov=document.getElementById('alert-overlay');
     const bn=document.getElementById('alert-banner');
     ov.classList.add('active');bn.classList.add('active');
@@ -1843,15 +1886,16 @@ async function handleQuakeData(data){
     triggerAlert(magNum>=6.5?'critical':'warning',locKr(h?.name||'불명'),mag,sc,jst(data[0].time));
     positionSubtitle(h?.latitude);
     fetchQuakeNews();
-  } else if(isNewEq&&isTTS&&isRecentEq){
+  } else if(shouldTTS){
     const krText=`지진 발생. ${jst(data[0].time)}. ${locKr(h?.name||'불명')}, 진도 ${sc}, 규모 ${mag}.`;
     const jpText=`地震発生。${jst(data[0].time)}。${locKr(h?.name||'불명')}、震度${sc}、マグニチュード${mag}。`;
     positionSubtitle(h?.latitude);
     speakAndSubtitle(krText,jpText,'warning',sc);
   }
 
-  // 진도 7 지진 자동 기록 (새로운 지진이고, 진도 7인 경우)
-  if (isNewEq && sc === '7') {
+  // 진도 7 자동 기록: 최초 로드가 아닌 새 이벤트 또는 후속 수정에서 처음 진도 7이 확인된 경우
+  if (!isInitialQuakeSnapshot && sc === '7' && !prevQuakeEventState.m7) {
+    prevQuakeEventState.m7=true;
     const eqYear = new Date(eqTimeMs || Date.now()).getFullYear();
     const newM7 = {
       year: eqYear,
@@ -1871,7 +1915,7 @@ async function handleQuakeData(data){
     }
   }
   // 원전 거리 표시 — 진도5↑ 독립 조건 (isAlert 여부 무관, 최신 지진일 때만)
-  if(isNewEq&&isNuclear&&isRecentEq&&h?.latitude&&h?.longitude) showNuclearInfo(h.latitude,h.longitude);
+  if(shouldNuclear&&h?.latitude&&h?.longitude) showNuclearInfo(h.latitude,h.longitude);
 
   buildTicker(displayData); // Task 2-3: 필터 적용 데이터로 ticker
   drawEpi(data.filter(d=>d.earthquake?.hypocenter?.latitude).slice(0,15)); // epi: 필터 무관 전체
@@ -1891,7 +1935,17 @@ const WS_BACKOFF_DELAYS = [5000,10000,20000,30000,60000]; // 5s→10s→20s→30
  *  → 같은 지진의 여러 보고(초보/수정/확정)는 병합, 동시 다발 별개 지진은 보존 */
 function _processRawQuakes(raw){
   const _dm=new Map();
+  const _seenIds=new Set();
+  const reportTime=x=>{
+    const t=new Date(x.time||0).getTime();
+    return Number.isFinite(t)?t:0;
+  };
   raw.forEach(q=>{
+    // P2PQuake 공식 사양의 id 중복 제거를 우선 적용한다.
+    if(q.id){
+      if(_seenIds.has(q.id))return;
+      _seenIds.add(q.id);
+    }
     // earthquake.time은 초 단위 문자열 "YYYY/MM/DD HH:MM:SS" — 같은 이벤트는 동일
     const eqTime=q.earthquake?.time||q.time||'0';
     // 진원지 0.3° 격자 키 추가 → 동일 시각 다른 위치 지진 구분
@@ -1901,9 +1955,9 @@ function _processRawQuakes(raw){
     const key=`${eqTime}|${locGrid}`;
     const prev=_dm.get(key);
     if(!prev){_dm.set(key,q);return;}
-    // 같은 키: 좌표+진도 정보가 더 많은 보고(수정·확정)로 교체
+    // 같은 키: 정보가 더 완전한 보고를 우선하고, 완성도가 같으면 더 최근 발표로 교체
     const sc2=x=>((x.earthquake?.hypocenter?.latitude||0)!==0?2:0)+((x.earthquake?.maxScale||0)>0?1:0);
-    if(sc2(q)>sc2(prev))_dm.set(key,q);
+    if(sc2(q)>sc2(prev)||(sc2(q)===sc2(prev)&&reportTime(q)>=reportTime(prev)))_dm.set(key,q);
   });
   return Array.from(_dm.values())
     .sort((a,b)=>new Date(b.earthquake?.time||b.time||0)-new Date(a.earthquake?.time||a.time||0))
@@ -1914,6 +1968,38 @@ function _processRawQuakes(raw){
       return lat>=20&&lat<=50&&lon>=118&&lon<=155;
     })
     .slice(0,20);
+}
+
+// WebSocket과 REST가 같은 데이터 묶음을 반복 전달해도 화면 전체를 다시 계산하지 않는다.
+// 각 묶음은 직렬 처리하여 여러 메시지가 동시에 handleQuakeData를 실행하는 경쟁 상태를 막는다.
+function quakeRecordSignature(q){
+  if(q.id)return q.id;
+  const h=q.earthquake?.hypocenter||{};
+  return [q.time||'',q.earthquake?.time||'',h.name||'',h.latitude??'',h.longitude??'',
+    h.magnitude??'',q.earthquake?.maxScale??''].join('|');
+}
+let quakeRenderQueue=Promise.resolve();
+let lastRenderedQuakeSignature=null;
+const pendingQuakeRenderSignatures=new Set();
+function queueQuakeRender(data){
+  const snapshot=Array.isArray(data)?data.slice():[];
+  if(!snapshot.length)return quakeRenderQueue;
+  const signature=snapshot.map(quakeRecordSignature).join('||');
+  if(signature===lastRenderedQuakeSignature||pendingQuakeRenderSignatures.has(signature))return quakeRenderQueue;
+  pendingQuakeRenderSignatures.add(signature);
+  quakeRenderQueue=quakeRenderQueue.then(async()=>{
+    try{
+      if(signature===lastRenderedQuakeSignature)return;
+      await handleQuakeData(snapshot);
+      lastRenderedQuakeSignature=signature;
+    }finally{
+      pendingQuakeRenderSignatures.delete(signature);
+    }
+  }).catch(error=>{
+    pendingQuakeRenderSignatures.delete(signature);
+    console.error('[QuakeRender] 처리 오류',error);
+  });
+  return quakeRenderQueue;
 }
 
 function connectP2PWebSocket(){
@@ -1933,12 +2019,14 @@ function connectP2PWebSocket(){
         const msg=JSON.parse(e.data);
         const code=msg.code;
         if(code===551){
-          // 지진정보 — 버퍼에 병합 후 처리
-          const merged=[msg,...wsQuakeBuffer];
-          wsQuakeBuffer=_processRawQuakes(merged);
-          await handleQuakeData(wsQuakeBuffer);
-        }else if(code===554||code===556){
-          // EEW — WS 메시지 직접 처리 (code=554: 경보, code=556: 예보 둘 다 즉시 표시)
+          // 지진정보 — ID 중복 제거 및 직렬 화면 반영
+          wsQuakeBuffer=_processRawQuakes([...wsQuakeBuffer,msg]);
+          await queueQuakeRender(wsQuakeBuffer);
+        }else if(code===554){
+          // 554는 긴급지진속보 '발표 감지' 신호이며, 속보 본문(진원·규모)은 포함하지 않는다.
+          markFetchSuccess('eew');
+        }else if(code===556){
+          // 실제 긴급지진속보 본문은 556만 화면과 음성 경보에 사용한다.
           if(msg.cancelled){hideEEW();eewEventId=msg.id||msg.time;}
           else{
             const evId=msg.id||msg.time;
@@ -1949,14 +2037,15 @@ function connectP2PWebSocket(){
           }
           markFetchSuccess('eew');
         }else if(code===552){
-          // 쓰나미 — 즉시 갱신
-          checkTsunami();
+          // 쓰나미 메시지 본문을 즉시 반영하고 REST는 복구·정합성 확인에 사용한다.
+          applyTsunamiData(msg);
+          markFetchSuccess('tsunami');
         }
       }catch(err){console.warn('[WS] 메시지 파싱 오류',err);}
     };
     p2pWs.onerror=(e)=>{
       console.warn('[WS] 오류',e);
-      markFetchFail('p2p');
+      updateSourceStatus('p2p','fail');
     };
     p2pWs.onclose=(e)=>{
       wsConnected=false;
@@ -1978,14 +2067,18 @@ function scheduleWsReconnect(){
   wsReconnectTimer=setTimeout(()=>{wsReconnectTimer=null;connectP2PWebSocket();},delay);
 }
 
+let loadDataInFlight=false;
 async function loadData(){
+  if(loadDataInFlight)return;
+  loadDataInFlight=true;
   try{
     const _raw=await fetchP2PWithFallback();
     if(!_raw?.length)return;
-    // REST 폴링: 버퍼를 서버 최신 상태로 동기화
-    wsQuakeBuffer=_processRawQuakes(_raw);
-    await handleQuakeData(wsQuakeBuffer);
+    // REST는 WebSocket 누락분을 보충한다. 기존 WS 수신분도 합쳐 오래된 응답이 최신 버퍼를 덮지 않게 한다.
+    wsQuakeBuffer=_processRawQuakes([..._raw,...wsQuakeBuffer]);
+    await queueQuakeRender(wsQuakeBuffer);
   }catch(e){console.error('오류',e);}
+  finally{loadDataInFlight=false;}
 }
 (async()=>{
   await fetchBroadcastSettings();    // 방송 설정 먼저 로드
@@ -1993,7 +2086,7 @@ async function loadData(){
   await loadData();
   await checkTsunami();
   connectP2PWebSocket();             // Task 2-1 Step 2: WebSocket 연결
-  setInterval(loadData,60000);       // WS 끊김 시 60초 폴백 (기존 300s)
+  setInterval(loadData,60000);       // 60초마다 REST 이력 대조: WS 누락 보충用, 변경 없으면 재렌더링하지 않음
   setInterval(checkTsunami,BCAST.tsunamiInterval*1000);
   setInterval(fetchBroadcastSettings,300000); // 5분마다 설정 재로드
   loadPlants();
