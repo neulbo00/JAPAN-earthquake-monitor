@@ -1418,7 +1418,11 @@ async function checkEEW(){
     if(item.cancelled){hideEEW();eewEventId=item.id||item.time;return;}
     // 3분 초과 EEW 무시
     const ageMs=Date.now()-new Date(item.time).getTime();
-    if(!Number.isFinite(ageMs)||ageMs>180000){if(eewActive)hideEEW();return;}
+    if(!Number.isFinite(ageMs)||ageMs>180000){
+      // REST 응답이 WS로 받은 최신 속보보다 오래된 경우, 현재 속보를 지우지 않는다.
+      if(eewActive&&(item.id||item.time)===eewEventId)hideEEW();
+      return;
+    }
     const evId=item.id||item.time;
     if(evId===eewEventId)return; // 이미 처리한 이벤트
     eewEventId=evId;
@@ -1468,8 +1472,8 @@ function renderTsunamiETA(item){
     const gradeKr=TSU_GRADE_MAP[a.grade]||a.grade||'—';
     const gradeCls=a.grade==='MajorWarning'?'tsu-grade-major':a.grade==='Warning'?'tsu-grade-warn':'tsu-grade-watch';
     const areaKr=_locTsuArea(a.name);
-    const arrival=a.arrivalTime||null;
-    const immediate=!!a.immediate;
+    const arrival=a.firstHeight?.arrivalTime||a.arrivalTime||null;
+    const immediate=!!a.immediate||/ただちに津波来襲|津波到達中と推測/.test(a.firstHeight?.condition||'');
     const timeStr=immediate?'즉시':(arrival||'—');
     return `<div class="tsu-eta-item">
       <span class="tsu-eta-grade ${gradeCls}">${gradeKr}</span>
@@ -1481,7 +1485,18 @@ function renderTsunamiETA(item){
 
 // 쓰나미 데이터 공통 렌더러: WebSocket과 REST가 같은 처리 경로를 사용한다.
 let tsunamiActive=false;
+let lastTsunamiMessageId=null;
+let lastTsunamiMessageTime=0;
 function applyTsunamiData(item){
+  // WSの重複・順序逆転したメッセージで、解除済みの津波情報を復活させない。
+  if(item){
+    const messageTime=new Date(item.time||0).getTime();
+    const messageId=item.id||item.time||null;
+    if(messageId&&messageId===lastTsunamiMessageId)return;
+    if(Number.isFinite(messageTime)&&messageTime>0&&messageTime<lastTsunamiMessageTime)return;
+    if(messageId)lastTsunamiMessageId=messageId;
+    if(Number.isFinite(messageTime)&&messageTime>0)lastTsunamiMessageTime=Math.max(lastTsunamiMessageTime,messageTime);
+  }
   const tb=document.getElementById('tsunami-banner');
   if(!tb)return;
   const issuedAt=item?.time?new Date(item.time).getTime():NaN;
@@ -1878,7 +1893,7 @@ async function handleQuakeData(data){
     speakAndSubtitle(krText,jpText,'warning',sc);
   }
 
-  // 진도 7 지진 자동 기록 (새로운 지진이고, 진도 7인 경우)
+  // 진도 7 자동 기록: 최초 로드가 아닌 새 이벤트 또는 후속 수정에서 처음 진도 7이 확인된 경우
   if (!isInitialQuakeSnapshot && sc === '7' && !prevQuakeEventState.m7) {
     prevQuakeEventState.m7=true;
     const eqYear = new Date(eqTimeMs || Date.now()).getFullYear();
