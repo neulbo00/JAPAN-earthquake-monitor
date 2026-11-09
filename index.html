@@ -2020,7 +2020,7 @@ function connectP2PWebSocket(){
         const code=msg.code;
         if(code===551){
           // 지진정보 — ID 중복 제거 및 직렬 화면 반영
-          wsQuakeBuffer=_processRawQuakes([msg,...wsQuakeBuffer]);
+          wsQuakeBuffer=_processRawQuakes([...wsQuakeBuffer,msg]);
           await queueQuakeRender(wsQuakeBuffer);
         }else if(code===554){
           // 554는 긴급지진속보 '발표 감지' 신호이며, 속보 본문(진원·규모)은 포함하지 않는다.
