@@ -181,11 +181,23 @@ def archive_old(records: dict) -> dict:
     - index.json 업데이트
     - 반환: 최근 30일치만 남긴 dict
     """
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=KEEP_DAYS)).strftime("%Y-%m-%d")
+    cutoff = datetime.now(timezone.utc) - timedelta(days=KEEP_DAYS)
 
     recent, old = {}, {}
+    jst = timezone(timedelta(hours=9))
     for eid, item in records.items():
-        (recent if item.get("at", "")[:10] >= cutoff else old)[eid] = item
+        raw_at = item.get("at", "")
+        try:
+            event_at = datetime.fromisoformat(raw_at.replace("Z", "+00:00"))
+            # 시간대가 없는 기존 데이터는 JMA 데이터의 기준 시간대인 JST로 해석
+            if event_at.tzinfo is None:
+                event_at = event_at.replace(tzinfo=jst)
+            target = recent if event_at.astimezone(timezone.utc) >= cutoff else old
+            target[eid] = item
+        except (TypeError, ValueError):
+            # 날짜를 해석할 수 없는 기록은 자동 삭제하지 않고 최근 파일에 보존
+            print(f"[warn] 날짜 형식 확인 필요, 보존 처리: {eid} / {raw_at}")
+            recent[eid] = item
 
     if not old:
         print("[archive] 이동할 데이터 없음")
