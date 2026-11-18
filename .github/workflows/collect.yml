@@ -2,7 +2,7 @@ name: 지진 데이터 수집 (기상청 JMA)
 
 on:
   schedule:
-    - cron: '17 * * * *'  # 매시간 17분 실행 (UTC, 정각 부하 분산)
+    - cron: '17,47 * * * *'  # 매시간 17분·47분 (30분 간격, 정각 부하 분산)
   workflow_dispatch:        # 수동 실행 버튼
 
 jobs:
