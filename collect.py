@@ -3,7 +3,7 @@
 일본 지진 데이터 수집 스크립트
 소스: https://www.jma.go.jp/bosai/quake/data/list.json (기상청 공식 로우 데이터)
       각 지진 상세 JSON으로 위도·경도·진도 보완
-실행: GitHub Actions 매시간 자동 실행
+실행: GitHub Actions 30분 간격 자동 실행
 
 [저장 구조]
 data/
